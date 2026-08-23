@@ -1,0 +1,10 @@
+# Angular dev-server proxy → .NET API (http://localhost:5000)
+# Used in dev only; production talks to the API directly via environment.apiBaseUrl.
+{
+  "/api": {
+    "target": "http://localhost:5119",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

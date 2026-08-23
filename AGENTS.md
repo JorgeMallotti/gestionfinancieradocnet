@@ -114,7 +114,7 @@ Angular  →  HTTP (REST)  →  Api Controllers  →  Application Services  → 
 
 ```
 backend/
-├── GestionFinanciera.sln
+├── GestionFinanciera.slnx        # .NET 10 solution (new XML format, default since .NET 9/10)
 ├── src/
 │   ├── GestionFinanciera.Api/
 │   │   ├── Controllers/            # Thin controllers, one per resource

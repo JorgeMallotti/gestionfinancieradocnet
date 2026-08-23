@@ -1,0 +1,49 @@
+{
+  "app": {
+    "name": "Gestión Financiera",
+    "tagline": "Gestión financiera interna"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "transactions": "Transacciones",
+    "categories": "Categorías",
+    "reports": "Informes",
+    "audit": "Auditoría",
+    "admin": "Administración",
+    "logout": "Cerrar sesión"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "retry": "Reintentar",
+    "confirm": "Confirmar",
+    "actions": "Acciones",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "yes": "Sí",
+    "no": "No",
+    "close": "Cerrar",
+    "logout": "Cerrar sesión",
+    "language": "Idioma"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Crear cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "companyName": "Nombre de la empresa",
+    "loginTitle": "Bienvenido de nuevo",
+    "loginSubtitle": "Accede al espacio de trabajo de tu empresa",
+    "registerTitle": "Crea tu empresa",
+    "registerSubtitle": "Configura tu espacio en minutos",
+    "logoutSuccess": "Has cerrado sesión"
+  }
+}
