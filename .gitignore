@@ -1,0 +1,45 @@
+# ── .NET ────────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
+TestResults/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+
+# ── Angular / Node ─────────────────────────────────────────────────────
+node_modules/
+dist/
+.tmp/
+.angular/
+frontend/.angular/
+*.tsbuildinfo
+
+# ── Environment / Secrets (never commit real values) ───────────────────
+.env
+.env.local
+.env.*.local
+appsettings.Production.json
+appsettings.*.local.json
+
+# Keep templates/example files
+!.env.example
+!appsettings.example.json
+
+# ── IDE / OS ───────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# ── Docker / DB ────────────────────────────────────────────────────────
+# Local SQL Server data volumes are mounted outside the repo by docker-compose
