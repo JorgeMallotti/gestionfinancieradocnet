@@ -10,6 +10,7 @@ TestResults/
 coverage/
 *.coverage
 *.coveragexml
+logs/
 
 # ── Angular / Node ─────────────────────────────────────────────────────
 node_modules/
@@ -43,3 +44,8 @@ Thumbs.db
 
 # ── Docker / DB ────────────────────────────────────────────────────────
 # Local SQL Server data volumes are mounted outside the repo by docker-compose
+
+# ── Local smoke-test artifacts (never commit) ──────────────────────────
+cookies.txt
+login.json
+register.json
