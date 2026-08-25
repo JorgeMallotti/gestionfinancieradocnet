@@ -27,6 +27,13 @@ public static class ClaimsPrincipalExtensions
     public static string? GetEmail(this ClaimsPrincipal principal) =>
         principal.FindFirstValue(ClaimTypes.Email);
 
+    /// <summary>
+    /// Role claim. The JWT handler maps the short "role" claim to
+    /// <see cref="ClaimTypes.Role"/> on inbound — so we read the mapped type.
+    /// </summary>
+    public static string? GetRole(this ClaimsPrincipal principal) =>
+        principal.FindFirstValue(ClaimTypes.Role);
+
     public static bool HasCompanyId(this ClaimsPrincipal principal) =>
         Guid.TryParse(principal.FindFirstValue(CompanyIdClaim), out _);
 }

@@ -20,4 +20,18 @@ public sealed class Category : BaseEntity
     public bool IsDefault { get; set; }
 
     public ICollection<Transaction> Transactions { get; set; } = [];
+
+    /// <summary>
+    /// Scalar-only projection for the audit trail. Serializing the entity itself
+    /// would hit navigation properties and fail on reference cycles (EF fixup).
+    /// </summary>
+    public object ToAuditSnapshot() => new
+    {
+        Id,
+        Name,
+        Description,
+        IsDefault,
+        CreatedAt,
+        UpdatedAt,
+    };
 }

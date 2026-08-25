@@ -1,6 +1,12 @@
 using GestionFinanciera.Application.Abstractions;
+using GestionFinanciera.Application.Common.Audit;
 using GestionFinanciera.Application.Features.Auth.Interfaces;
+using GestionFinanciera.Application.Features.Categories;
 using GestionFinanciera.Application.Features.Categories.Interfaces;
+using GestionFinanciera.Application.Features.Dashboard;
+using GestionFinanciera.Application.Features.Dashboard.Interfaces;
+using GestionFinanciera.Application.Features.Transactions;
+using GestionFinanciera.Application.Features.Transactions.Interfaces;
 using GestionFinanciera.Infrastructure.Identity;
 using GestionFinanciera.Infrastructure.Persistence;
 using GestionFinanciera.Infrastructure.Persistence.Repositories;
@@ -55,9 +61,14 @@ public static class DependencyInjection
 
         // Services
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ITransactionService, TransactionService>();
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IAuditService, AuditService>();
 
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<ITransactionRepository, TransactionRepository>();
 
         return services;
     }

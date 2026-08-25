@@ -27,4 +27,22 @@ public sealed class Transaction : BaseEntity
     public DateTimeOffset Date { get; set; }
 
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Scalar-only projection for the audit trail. Serializing the entity itself
+    /// would hit navigation properties and fail on reference cycles (EF fixup).
+    /// </summary>
+    public object ToAuditSnapshot() => new
+    {
+        Id,
+        CategoryId,
+        Type,
+        Amount,
+        Currency,
+        Date,
+        Description,
+        CreatedByUserId,
+        CreatedAt,
+        UpdatedAt,
+    };
 }

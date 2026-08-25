@@ -17,6 +17,8 @@ public sealed class ApplicationDbContext(
     ICurrentTenant currentTenant)
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
+    private readonly ICurrentTenant _currentTenant = currentTenant;
+
     public DbSet<Company> Companies => Set<Company>();
 
     public DbSet<Category> Categories => Set<Category>();
@@ -35,17 +37,18 @@ public sealed class ApplicationDbContext(
 
         // ── Multi-tenancy: global query filters ─────────────────────────────
         // Automatic isolation — a query can never leak another company's rows.
-        // When no tenant is set (anonymous endpoints), the filter is a no-op
-        // because those endpoints never query business tables.
-        Guid? tenantId = currentTenant.CompanyId;
-
+        //
+        // IMPORTANT: the filter MUST reference the tenant provider instance
+        // (evaluated per DbContext, i.e. per request), NOT a captured local
+        // variable. EF Core caches the model once per process — capturing a
+        // local would freeze the FIRST tenant forever.
         builder.Entity<Category>()
-            .HasQueryFilter(c => tenantId == null || c.CompanyId == tenantId);
+            .HasQueryFilter(c => _currentTenant.CompanyId == null || c.CompanyId == _currentTenant.CompanyId);
 
         builder.Entity<Transaction>()
-            .HasQueryFilter(t => tenantId == null || t.CompanyId == tenantId);
+            .HasQueryFilter(t => _currentTenant.CompanyId == null || t.CompanyId == _currentTenant.CompanyId);
 
         builder.Entity<AuditLog>()
-            .HasQueryFilter(a => tenantId == null || a.CompanyId == tenantId);
+            .HasQueryFilter(a => _currentTenant.CompanyId == null || a.CompanyId == _currentTenant.CompanyId);
     }
 }
