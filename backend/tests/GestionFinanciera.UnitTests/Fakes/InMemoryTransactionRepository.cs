@@ -59,6 +59,23 @@ internal sealed class InMemoryTransactionRepository : ITransactionRepository
     public Task<int> CountByCategoryAsync(Guid companyId, Guid categoryId, CancellationToken ct) =>
         Task.FromResult(_items.Count(t => t.CompanyId == companyId && t.CategoryId == categoryId));
 
+    public Task<IReadOnlyList<Transaction>> GetInRangeAsync(
+        Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
+    {
+        var result = _items
+            .Where(t => t.CompanyId == companyId && InRange(t, from, to))
+            .OrderBy(t => t.Date)
+            .ToList();
+
+        foreach (var t in result)
+        {
+            if (t.Category is null && CategoryNames.TryGetValue(t.CategoryId, out string? name))
+                t.Category = new Category { Id = t.CategoryId, Name = name };
+        }
+
+        return Task.FromResult<IReadOnlyList<Transaction>>(result);
+    }
+
     public Task AddAsync(Transaction transaction, CancellationToken ct)
     {
         _items.Add(transaction);

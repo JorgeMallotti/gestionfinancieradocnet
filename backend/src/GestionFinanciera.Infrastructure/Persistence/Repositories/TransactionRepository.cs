@@ -57,6 +57,24 @@ public sealed class TransactionRepository(ApplicationDbContext dbContext) : ITra
         await dbContext.Transactions
             .CountAsync(t => t.CompanyId == companyId && t.CategoryId == categoryId, ct);
 
+    public async Task<IReadOnlyList<Transaction>> GetInRangeAsync(
+        Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
+    {
+        IQueryable<Transaction> source = dbContext.Transactions
+            .Include(t => t.Category)
+            .Where(t => t.CompanyId == companyId);
+
+        if (from.HasValue)
+            source = source.Where(t => t.Date >= from.Value);
+
+        if (to.HasValue)
+            source = source.Where(t => t.Date <= to.Value);
+
+        return await source
+            .OrderBy(t => t.Date)
+            .ToListAsync(ct);
+    }
+
     public async Task AddAsync(Transaction transaction, CancellationToken ct)
     {
         await dbContext.Transactions.AddAsync(transaction, ct);

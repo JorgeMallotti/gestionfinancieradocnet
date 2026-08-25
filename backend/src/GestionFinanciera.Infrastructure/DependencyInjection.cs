@@ -3,8 +3,11 @@ using GestionFinanciera.Application.Common.Audit;
 using GestionFinanciera.Application.Features.Auth.Interfaces;
 using GestionFinanciera.Application.Features.Categories;
 using GestionFinanciera.Application.Features.Categories.Interfaces;
+using GestionFinanciera.Application.Features.Companies.Interfaces;
 using GestionFinanciera.Application.Features.Dashboard;
 using GestionFinanciera.Application.Features.Dashboard.Interfaces;
+using GestionFinanciera.Application.Features.Reports;
+using GestionFinanciera.Application.Features.Reports.Interfaces;
 using GestionFinanciera.Application.Features.Transactions;
 using GestionFinanciera.Application.Features.Transactions.Interfaces;
 using GestionFinanciera.Infrastructure.Identity;
@@ -59,16 +62,24 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<JwtService>();
 
+        // SMTP (reports by email) — real values via user-secrets / App Settings
+        services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+
         // Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IPdfService, PdfService>();
+        services.AddScoped<IExcelService, ExcelService>();
+        services.AddScoped<IEmailService, EmailService>();
 
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<ICompanyRepository, CompanyRepository>();
 
         return services;
     }

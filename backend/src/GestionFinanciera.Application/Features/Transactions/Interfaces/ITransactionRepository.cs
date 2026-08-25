@@ -20,6 +20,10 @@ public interface ITransactionRepository
 
     Task<int> CountByCategoryAsync(Guid companyId, Guid categoryId, CancellationToken ct);
 
+    /// <summary>All transactions in a date range, ordered by date (reports).</summary>
+    Task<IReadOnlyList<Transaction>> GetInRangeAsync(
+        Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct);
+
     Task AddAsync(Transaction transaction, CancellationToken ct);
 
     Task UpdateAsync(Transaction transaction, CancellationToken ct);
