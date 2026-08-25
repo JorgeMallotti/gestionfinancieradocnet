@@ -1,0 +1,51 @@
+:host {
+  display: block;
+  height: 100dvh;
+}
+
+.shell {
+  height: 100%;
+}
+
+.sidenav {
+  width: 260px;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  background: var(--mat-sys-surface-container);
+}
+
+.topbar {
+  gap: 4px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.lang-select {
+  width: 110px;
+  font-size: 14px;
+}
+
+.content {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.active-link {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* Mobile-first: reduce padding on small screens */
+@media (max-width: 599px) {
+  .content {
+    padding: 12px;
+  }
+}

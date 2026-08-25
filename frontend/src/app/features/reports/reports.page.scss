@@ -1,0 +1,52 @@
+.reports {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header {
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.icon-pdf {
+  color: #d32f2f;
+}
+
+.icon-excel {
+  color: #2e7d32;
+}
+
+.email-card {
+  mat-card-content {
+    padding-top: 8px;
+  }
+}
+
+.email-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.email-field {
+  flex: 2 1 260px;
+}
+
+.email-form mat-form-field {
+  flex: 1 1 180px;
+}
+
+.send-btn {
+  align-self: center;
+}

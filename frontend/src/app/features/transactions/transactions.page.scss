@@ -1,0 +1,76 @@
+.transactions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.filters mat-form-field {
+  min-width: 150px;
+  flex: 1 1 180px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  align-items: center;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  padding-bottom: 0;
+}
+
+.chip-income {
+  background: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+}
+
+.chip-expense {
+  background: rgba(244, 67, 54, 0.15);
+  color: #c62828;
+}
+
+.amount-income {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.amount-expense {
+  color: #c62828;
+  font-weight: 500;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}

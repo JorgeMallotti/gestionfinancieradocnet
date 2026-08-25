@@ -1,0 +1,60 @@
+.audit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+}
+
+.admin-badge {
+  color: var(--mat-sys-primary);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  padding-bottom: 0;
+}
+
+.mono {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.action-chip {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.action-create {
+  background: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+}
+
+.action-update {
+  background: rgba(255, 152, 0, 0.15);
+  color: #e65100;
+}
+
+.action-delete {
+  background: rgba(244, 67, 54, 0.15);
+  color: #c62828;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}

@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>
+    {{ (isEdit() ? 'categories.editTitle' : 'categories.createTitle') | translate }}
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+    <mat-dialog-content class="dialog-content">
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'categories.name' | translate }}</mat-label>
+            <input matInput formControlName="name" required />
+            @if (form.controls.name.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+            @if (form.controls.name.hasError('maxlength')) {
+            <mat-error>{{ 'common.maxLength' | translate }}</mat-error>
+            }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'categories.description' | translate }}</mat-label>
+            <textarea matInput rows="3" formControlName="description"></textarea>
+            @if (form.controls.description.hasError('maxlength')) {
+            <mat-error>{{ 'common.maxLength' | translate }}</mat-error>
+            }
+        </mat-form-field>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-button mat-dialog-close type="button">{{ 'common.cancel' | translate }}</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+            {{ 'common.save' | translate }}
+        </button>
+    </mat-dialog-actions>
+</form>

@@ -1,0 +1,97 @@
+import { Component, computed, inject } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+
+import { AuthService } from '../../core/services/auth.service';
+import { AppLanguage, LanguageService } from '../../core/services/language.service';
+import { ThemeService } from '../../core/services/theme.service';
+
+interface NavItem {
+  route: string;
+  labelKey: string;
+  icon: string;
+  adminOnly?: boolean;
+}
+
+/**
+ * Protected application shell: toolbar + responsive sidenav + router outlet.
+ * Mobile-first: the sidenav overlays on small screens and docks on wide ones
+ * (BreakpointObserver from Material CDK).
+ */
+@Component({
+  selector: 'app-layout',
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MatSidenavModule,
+    MatToolbarModule,
+    MatListModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatSelectModule,
+    MatTooltipModule,
+    TranslatePipe,
+  ],
+  templateUrl: './layout.component.html',
+  styleUrl: './layout.component.scss',
+})
+export class LayoutComponent {
+  private readonly breakpoints = inject(BreakpointObserver);
+  private readonly themeService = inject(ThemeService);
+  private readonly languageService = inject(LanguageService);
+  protected readonly auth = inject(AuthService);
+
+  protected readonly navItems: NavItem[] = [
+    { route: '/dashboard', labelKey: 'nav.dashboard', icon: 'dashboard' },
+    { route: '/transactions', labelKey: 'nav.transactions', icon: 'receipt_long' },
+    { route: '/categories', labelKey: 'nav.categories', icon: 'category' },
+    { route: '/reports', labelKey: 'nav.reports', icon: 'description' },
+    { route: '/audit', labelKey: 'nav.audit', icon: 'history', adminOnly: true },
+  ];
+
+  /** Docks the sidenav on ≥ tablet; overlays on handset. */
+  private readonly isHandset = toSignal(
+    this.breakpoints.observe([Breakpoints.Handset]).pipe(map((x) => x.matches)),
+    { initialValue: false },
+  );
+
+  protected readonly mode = computed(() => (this.isHandset() ? 'over' : 'side'));
+  protected readonly isDark = computed(() => this.themeService.current() === 'dark');
+
+  protected readonly languages: { code: AppLanguage; label: string }[] = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'pt', label: 'Português' },
+  ];
+
+  protected readonly currentLang = computed(() => this.languageService.current);
+
+  protected visibleItems = computed(() =>
+    this.navItems.filter((item) => !item.adminOnly || this.auth.isAdmin()),
+  );
+
+  protected toggleTheme(): void {
+    this.themeService.toggle();
+  }
+
+  protected setLanguage(lang: AppLanguage): void {
+    this.languageService.setLanguage(lang);
+  }
+
+  protected logout(): void {
+    void this.auth.logout();
+  }
+}

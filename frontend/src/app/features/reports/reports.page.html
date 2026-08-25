@@ -1,0 +1,84 @@
+<div class="reports">
+    <header class="page-header">
+        <h1>{{ 'reports.title' | translate }}</h1>
+    </header>
+
+    @if (downloading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <section class="actions-grid">
+        <mat-card class="action-card">
+            <mat-card-header>
+                <mat-icon mat-card-avatar class="icon-pdf">picture_as_pdf</mat-icon>
+                <mat-card-title>{{ 'reports.pdfTitle' | translate }}</mat-card-title>
+                <mat-card-subtitle>{{ 'reports.pdfSubtitle' | translate }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-actions align="end">
+                <button mat-raised-button color="primary" (click)="downloadPdf()" [disabled]="downloading() !== null">
+                    <mat-icon>download</mat-icon>
+                    {{ 'reports.downloadPdf' | translate }}
+                </button>
+            </mat-card-actions>
+        </mat-card>
+
+        <mat-card class="action-card">
+            <mat-card-header>
+                <mat-icon mat-card-avatar class="icon-excel">table_chart</mat-icon>
+                <mat-card-title>{{ 'reports.excelTitle' | translate }}</mat-card-title>
+                <mat-card-subtitle>{{ 'reports.excelSubtitle' | translate }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-actions align="end">
+                <button mat-raised-button color="accent" (click)="downloadExcel()" [disabled]="downloading() !== null">
+                    <mat-icon>download</mat-icon>
+                    {{ 'reports.downloadExcel' | translate }}
+                </button>
+            </mat-card-actions>
+        </mat-card>
+    </section>
+
+    @if (canSendEmail()) {
+    <mat-card class="email-card">
+        <mat-card-header>
+            <mat-icon mat-card-avatar>mail_outline</mat-icon>
+            <mat-card-title>{{ 'reports.emailTitle' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'reports.emailSubtitle' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+            <form [formGroup]="emailForm" class="email-form">
+                <mat-form-field appearance="outline" class="email-field">
+                    <mat-label>{{ 'reports.emailTo' | translate }}</mat-label>
+                    <input matInput type="email" formControlName="email" required />
+                    @if (emailForm.controls.email.hasError('required')) {
+                    <mat-error>{{ 'common.required' | translate }}</mat-error>
+                    }
+                    @if (emailForm.controls.email.hasError('email')) {
+                    <mat-error>{{ 'auth.errorEmailInvalid' | translate }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ 'transactions.from' | translate }}</mat-label>
+                    <input matInput [matDatepicker]="fromPicker" formControlName="from" />
+                    <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #fromPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ 'transactions.to' | translate }}</mat-label>
+                    <input matInput [matDatepicker]="toPicker" formControlName="to" />
+                    <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #toPicker></mat-datepicker>
+                </mat-form-field>
+
+                <button mat-raised-button class="send-btn" (click)="sendEmail()"
+                    [disabled]="emailForm.invalid || downloading() !== null">
+                    <mat-icon>send</mat-icon>
+                    {{ 'reports.sendEmail' | translate }}
+                </button>
+            </form>
+        </mat-card-content>
+    </mat-card>
+    }
+</div>

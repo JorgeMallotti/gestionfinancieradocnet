@@ -17,7 +17,8 @@ namespace GestionFinanciera.Api.Controllers;
 [Route("api/auth")]
 public sealed class AuthController(
     IAuthService authService,
-    IOptions<JwtOptions> jwtOptions) : ControllerBase
+    IOptions<JwtOptions> jwtOptions,
+    IConfiguration configuration) : ControllerBase
 {
     public const string RefreshCookieName = "refresh_token";
 
@@ -110,7 +111,12 @@ public sealed class AuthController(
         });
     }
 
-    /// <summary>CSRF defence: the Origin (if present) must match this host.</summary>
+    /// <summary>
+    /// CSRF defence: the Origin header (if present) must be one of the CORS
+    /// allowlisted origins. We compare against the allowlist — NOT against the
+    /// current Host — because in production the frontend and the API live on
+    /// different domains, and in dev the proxy changes the Host port.
+    /// </summary>
     private bool IsSameOriginRequest()
     {
         string? origin = Request.Headers.Origin;
@@ -118,6 +124,15 @@ public sealed class AuthController(
             return true; // non-browser clients (curl) have no Origin header
 
         var uri = new Uri(origin, UriKind.Absolute);
-        return uri.Host == Request.Host.Host && uri.Port == Request.Host.Port;
+        string[] allowed = configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?? [];
+
+        string withPort = $"{uri.Scheme}://{uri.Host}:{uri.Port}";
+        string withoutPort = $"{uri.Scheme}://{uri.Host}";
+
+        return allowed.Contains(withPort, StringComparer.OrdinalIgnoreCase)
+            || allowed.Contains(withoutPort, StringComparer.OrdinalIgnoreCase);
     }
 }

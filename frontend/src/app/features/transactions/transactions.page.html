@@ -1,0 +1,130 @@
+<div class="transactions">
+    <header class="page-header">
+        <h1>{{ 'transactions.title' | translate }}</h1>
+        @if (canMutate()) {
+        <button mat-raised-button color="primary" (click)="openCreate()">
+            <mat-icon>add</mat-icon>
+            {{ 'transactions.create' | translate }}
+        </button>
+        }
+    </header>
+
+    <!-- Filters -->
+    <mat-card>
+        <mat-card-content>
+            <form [formGroup]="filterForm" class="filters" (ngSubmit)="applyFilters()">
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ 'transactions.type' | translate }}</mat-label>
+                    <mat-select formControlName="type">
+                        <mat-option [value]="null">{{ 'common.all' | translate }}</mat-option>
+                        <mat-option value="Income">{{ 'transactions.income' | translate }}</mat-option>
+                        <mat-option value="Expense">{{ 'transactions.expense' | translate }}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ 'transactions.category' | translate }}</mat-label>
+                    <mat-select formControlName="categoryId">
+                        <mat-option [value]="null">{{ 'common.all' | translate }}</mat-option>
+                        @for (category of categories(); track category.id) {
+                        <mat-option [value]="category.id">{{ category.name }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ 'transactions.from' | translate }}</mat-label>
+                    <input matInput [matDatepicker]="fromPicker" formControlName="from" />
+                    <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #fromPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ 'transactions.to' | translate }}</mat-label>
+                    <input matInput [matDatepicker]="toPicker" formControlName="to" />
+                    <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #toPicker></mat-datepicker>
+                </mat-form-field>
+
+                <div class="filter-actions">
+                    <button mat-flat-button type="submit">
+                        <mat-icon>filter_alt</mat-icon>
+                        {{ 'common.search' | translate }}
+                    </button>
+                    <button mat-stroked-button type="button" (click)="clearFilters()">
+                        {{ 'common.clear' | translate }}
+                    </button>
+                </div>
+            </form>
+        </mat-card-content>
+    </mat-card>
+
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <!-- Table -->
+    <mat-card>
+        <mat-card-content class="table-wrapper">
+            <table mat-table [dataSource]="transactions()">
+                <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'transactions.date' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.date | date: 'yyyy-MM-dd' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="category">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'transactions.category' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.categoryName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="type">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'transactions.type' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-chip [class]="row.type === 'Income' ? 'chip-income' : 'chip-expense'">
+                            {{ typeLabel(row.type) | translate }}
+                        </mat-chip>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="amount">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'transactions.amount' | translate }}</th>
+                    <td mat-cell *matCellDef="let row" [class.amount-expense]="row.type === 'Expense'"
+                        [class.amount-income]="row.type === 'Income'">
+                        {{ row.amount | number: '1.2-2' }} {{ row.currency }}
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'transactions.description' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.description || ('common.noDescription' | translate) }}
+                    </td>
+                </ng-container>
+
+                @if (canMutate()) {
+                <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'common.actions' | translate }}</th>
+                    <td mat-cell *matCellDef="let row" class="actions-cell">
+                        <button mat-icon-button (click)="openEdit(row)" [attr.aria-label]="'common.edit' | translate">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="confirmDelete(row)"
+                            [attr.aria-label]="'common.delete' | translate">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </td>
+                </ng-container>
+                }
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+            </table>
+
+            @if (transactions().length === 0 && !loading()) {
+            <p class="empty">{{ 'common.noData' | translate }}</p>
+            }
+
+            <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageSizeOptions]="[5, 10, 25, 50]"
+                [pageIndex]="page() - 1" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
+        </mat-card-content>
+    </mat-card>
+</div>

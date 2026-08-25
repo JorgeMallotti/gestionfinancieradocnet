@@ -1,10 +1,22 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { App } from './app';
+
+/** Minimal TranslateService stub — the app component only calls init(). */
+const translateStub = {
+  use: () => ({ subscribe: () => undefined }),
+  instant: (key: string) => key,
+  currentLang: () => 'en',
+  getBrowserLang: () => 'en',
+  setDefaultLang: () => undefined,
+  addLangs: () => undefined,
+};
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [{ provide: TranslateService, useValue: translateStub }],
     }).compileComponents();
   });
 
@@ -14,10 +26,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render the router outlet', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, gestion-financiera-web');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });
