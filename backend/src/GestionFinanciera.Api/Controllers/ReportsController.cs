@@ -22,25 +22,25 @@ public sealed class ReportsController(IReportService service) : ControllerBase
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     [HttpGet("pdf")]
-    public async Task<IActionResult> GetPdf(
+    public async Task<ActionResult<byte[]>> GetPdf(
         [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
         var result = await service.GeneratePdfAsync(companyId, from, to, ct);
         if (result.IsFailure)
-            return BadRequest(new ProblemDetails { Detail = result.Error });
+            return this.ToActionResult(result);
 
         return File(result.Value!, PdfContentType, "financial-report.pdf");
     }
 
     [HttpGet("excel")]
-    public async Task<IActionResult> GetExcel(
+    public async Task<ActionResult<byte[]>> GetExcel(
         [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
         var result = await service.GenerateExcelAsync(companyId, from, to, ct);
         if (result.IsFailure)
-            return BadRequest(new ProblemDetails { Detail = result.Error });
+            return this.ToActionResult(result);
 
         return File(result.Value!, ExcelContentType, "transactions.xlsx");
     }
@@ -52,7 +52,7 @@ public sealed class ReportsController(IReportService service) : ControllerBase
         var companyId = User.GetCompanyId();
         var result = await service.SendByEmailAsync(dto, companyId, ct);
         if (result.IsFailure)
-            return BadRequest(new ProblemDetails { Detail = result.Error });
+            return this.ToActionResult(result);
 
         return Accepted(new { message = "Report email queued." });
     }

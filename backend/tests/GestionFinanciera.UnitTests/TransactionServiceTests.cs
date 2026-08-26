@@ -1,3 +1,4 @@
+using GestionFinanciera.Application.Common.Results;
 using GestionFinanciera.Application.Features.Transactions;
 using GestionFinanciera.Application.Features.Transactions.DTOs;
 using GestionFinanciera.Application.Features.Transactions.Validators;
@@ -156,6 +157,7 @@ public sealed class TransactionServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Contains("not found", result.Error);
+        Assert.Equal(ErrorCode.NotFound, result.Code);
     }
 
     [Fact]
@@ -203,6 +205,7 @@ public sealed class TransactionServiceTests
             Guid.NewGuid(), CompanyId, UserId, "Admin", null, CancellationToken.None);
 
         Assert.True(result.IsFailure);
+        Assert.Equal(ErrorCode.NotFound, result.Code);
         Assert.Empty(_audit.Entries);
     }
 

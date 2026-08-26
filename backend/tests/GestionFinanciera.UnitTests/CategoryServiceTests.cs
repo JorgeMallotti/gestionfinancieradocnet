@@ -1,4 +1,5 @@
 using GestionFinanciera.Application.Common.Pagination;
+using GestionFinanciera.Application.Common.Results;
 using GestionFinanciera.Application.Features.Categories;
 using GestionFinanciera.Application.Features.Categories.DTOs;
 using GestionFinanciera.Application.Features.Categories.Validators;
@@ -142,6 +143,7 @@ public sealed class CategoryServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Contains("not found", result.Error);
+        Assert.Equal(ErrorCode.NotFound, result.Code);
     }
 
     // ── Delete ────────────────────────────────────────────────────────────
@@ -235,5 +237,6 @@ public sealed class CategoryServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Contains("not found", result.Error);
+        Assert.Equal(ErrorCode.NotFound, result.Code);
     }
 }

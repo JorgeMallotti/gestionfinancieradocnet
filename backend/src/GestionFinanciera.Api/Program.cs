@@ -11,6 +11,7 @@ using GestionFinanciera.Infrastructure;
 using GestionFinanciera.Infrastructure.Identity;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -43,6 +44,25 @@ try
 
     // RFC 7807 ProblemDetails for errors (no stack traces leaked to clients)
     builder.Services.AddProblemDetails();
+
+    // Global exception handler → ProblemDetails (see Middleware/GlobalExceptionHandler.cs)
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+    // Forwarded headers: the real client IP/scheme arrive via X-Forwarded-* when
+    // behind a reverse proxy (Azure App Service). Enabled via configuration in prod.
+    bool forwardedHeadersEnabled = builder.Configuration.GetValue<bool>("ForwardedHeaders:Enabled");
+    if (forwardedHeadersEnabled)
+    {
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+            // App Service pattern (Microsoft docs): the only entry point is the
+            // Azure load balancer, so trust the forwarded headers it sets.
+            options.KnownIPNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
+    }
 
     // ── Swagger / OpenAPI ──
     builder.Services.AddEndpointsApiExplorer();
@@ -135,6 +155,12 @@ try
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
+
+    // Must run before UseHttpsRedirection/UseAuthentication so scheme and client
+    // IP are correct behind a reverse proxy (no-op when ForwardedHeaders is off).
+    app.UseForwardedHeaders();
+
+    app.UseExceptionHandler(); // global handler registered above
 
     if (app.Environment.IsDevelopment())
     {

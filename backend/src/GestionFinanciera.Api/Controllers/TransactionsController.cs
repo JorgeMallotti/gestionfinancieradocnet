@@ -33,7 +33,7 @@ public sealed class TransactionsController(ITransactionService service) : Contro
     {
         var companyId = User.GetCompanyId();
         var result = await service.GetByIdAsync(id, companyId, ct);
-        return result.IsSuccess ? Ok(result.Value) : NotFound();
+        return this.ToActionResult(result);
     }
 
     [HttpPost]
@@ -46,7 +46,7 @@ public sealed class TransactionsController(ITransactionService service) : Contro
             dto, companyId, userId, User.GetRole() ?? string.Empty, HttpContext.GetClientIpAddress(), ct);
 
         if (result.IsFailure)
-            return BadRequest(new ProblemDetails { Detail = result.Error });
+            return this.ToActionResult(result);
 
         var created = result.Value!;
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
@@ -61,10 +61,7 @@ public sealed class TransactionsController(ITransactionService service) : Contro
         var result = await service.UpdateAsync(
             id, dto, companyId, userId, User.GetRole() ?? string.Empty, HttpContext.GetClientIpAddress(), ct);
 
-        if (result.IsFailure)
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-
-        return Ok(result.Value);
+        return this.ToActionResult(result);
     }
 
     [HttpDelete("{id:guid}")]
@@ -76,9 +73,6 @@ public sealed class TransactionsController(ITransactionService service) : Contro
         var result = await service.DeleteAsync(
             id, companyId, userId, User.GetRole() ?? string.Empty, HttpContext.GetClientIpAddress(), ct);
 
-        if (result.IsFailure)
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-
-        return NoContent();
+        return this.ToActionResult(result);
     }
 }

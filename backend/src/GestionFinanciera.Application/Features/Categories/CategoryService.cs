@@ -45,7 +45,7 @@ public sealed class CategoryService(
     {
         var category = await repository.GetByIdAsync(id, companyId, ct);
         if (category is null)
-            return Result<CategoryDto>.Failure("Category not found.");
+            return Result<CategoryDto>.Failure(ErrorCode.NotFound, "Category not found.");
 
         return Result<CategoryDto>.Success(CategoryDto.FromEntity(category));
     }
@@ -54,14 +54,14 @@ public sealed class CategoryService(
         CreateCategoryDto dto, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
         if (!CanMutate(role))
-            return Result<CategoryDto>.Failure("You do not have permission to create categories.");
+            return Result<CategoryDto>.Failure(ErrorCode.Forbidden, "You do not have permission to create categories.");
 
         var validation = await createValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
             return Result<CategoryDto>.Failure(validation.Errors.First().ErrorMessage);
 
         if (await repository.ExistsByNameAsync(companyId, dto.Name.Trim(), ct))
-            return Result<CategoryDto>.Failure($"A category named '{dto.Name.Trim()}' already exists.");
+            return Result<CategoryDto>.Failure(ErrorCode.Conflict, $"A category named '{dto.Name.Trim()}' already exists.");
 
         var category = new Category
         {
@@ -82,7 +82,7 @@ public sealed class CategoryService(
         Guid id, UpdateCategoryDto dto, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
         if (!CanMutate(role))
-            return Result<CategoryDto>.Failure("You do not have permission to update categories.");
+            return Result<CategoryDto>.Failure(ErrorCode.Forbidden, "You do not have permission to update categories.");
 
         var validation = await updateValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
@@ -90,12 +90,12 @@ public sealed class CategoryService(
 
         var category = await repository.GetByIdAsync(id, companyId, ct);
         if (category is null)
-            return Result<CategoryDto>.Failure("Category not found.");
+            return Result<CategoryDto>.Failure(ErrorCode.NotFound, "Category not found.");
 
         string newName = dto.Name.Trim();
         if (!string.Equals(newName, category.Name, StringComparison.OrdinalIgnoreCase)
             && await repository.ExistsByNameAsync(companyId, newName, ct))
-            return Result<CategoryDto>.Failure($"A category named '{newName}' already exists.");
+            return Result<CategoryDto>.Failure(ErrorCode.Conflict, $"A category named '{newName}' already exists.");
 
         string beforeJson = AuditJson.Serialize(category.ToAuditSnapshot());
 
@@ -114,17 +114,17 @@ public sealed class CategoryService(
         Guid id, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
         if (!CanMutate(role))
-            return Result.Failure("You do not have permission to delete categories.");
+            return Result.Failure(ErrorCode.Forbidden, "You do not have permission to delete categories.");
 
         var category = await repository.GetByIdAsync(id, companyId, ct);
         if (category is null)
-            return Result.Failure("Category not found.");
+            return Result.Failure(ErrorCode.NotFound, "Category not found.");
 
         if (category.IsDefault)
-            return Result.Failure("Default categories cannot be deleted.");
+            return Result.Failure(ErrorCode.Conflict, "Default categories cannot be deleted.");
 
         if (await transactions.CountByCategoryAsync(companyId, id, ct) > 0)
-            return Result.Failure("This category has transactions and cannot be deleted.");
+            return Result.Failure(ErrorCode.Conflict, "This category has transactions and cannot be deleted.");
 
         string beforeJson = AuditJson.Serialize(category.ToAuditSnapshot());
 

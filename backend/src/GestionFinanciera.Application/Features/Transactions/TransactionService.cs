@@ -41,7 +41,7 @@ public sealed class TransactionService(
     {
         var transaction = await repository.GetByIdAsync(id, companyId, ct);
         if (transaction is null)
-            return Result<TransactionDto>.Failure("Transaction not found.");
+            return Result<TransactionDto>.Failure(ErrorCode.NotFound, "Transaction not found.");
 
         return Result<TransactionDto>.Success(TransactionDto.FromEntity(transaction));
     }
@@ -50,14 +50,14 @@ public sealed class TransactionService(
         CreateTransactionDto dto, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
         if (!CanMutate(role))
-            return Result<TransactionDto>.Failure("You do not have permission to create transactions.");
+            return Result<TransactionDto>.Failure(ErrorCode.Forbidden, "You do not have permission to create transactions.");
 
         var validation = await createValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
             return Result<TransactionDto>.Failure(validation.Errors.First().ErrorMessage);
 
         if (await categories.GetByIdAsync(dto.CategoryId, companyId, ct) is null)
-            return Result<TransactionDto>.Failure("Category does not exist.");
+            return Result<TransactionDto>.Failure(ErrorCode.NotFound, "Category does not exist.");
 
         var transaction = new Transaction
         {
@@ -78,7 +78,7 @@ public sealed class TransactionService(
 
         var saved = await repository.GetByIdAsync(transaction.Id, companyId, ct);
         if (saved is null)
-            return Result<TransactionDto>.Failure("Transaction was created but could not be read back.");
+            return Result<TransactionDto>.Failure(ErrorCode.InternalError, "Transaction was created but could not be read back.");
 
         return Result<TransactionDto>.Success(TransactionDto.FromEntity(saved));
     }
@@ -87,7 +87,7 @@ public sealed class TransactionService(
         Guid id, UpdateTransactionDto dto, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
         if (!CanMutate(role))
-            return Result<TransactionDto>.Failure("You do not have permission to update transactions.");
+            return Result<TransactionDto>.Failure(ErrorCode.Forbidden, "You do not have permission to update transactions.");
 
         var validation = await updateValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
@@ -95,10 +95,10 @@ public sealed class TransactionService(
 
         var transaction = await repository.GetByIdAsync(id, companyId, ct);
         if (transaction is null)
-            return Result<TransactionDto>.Failure("Transaction not found.");
+            return Result<TransactionDto>.Failure(ErrorCode.NotFound, "Transaction not found.");
 
         if (await categories.GetByIdAsync(dto.CategoryId, companyId, ct) is null)
-            return Result<TransactionDto>.Failure("Category does not exist.");
+            return Result<TransactionDto>.Failure(ErrorCode.NotFound, "Category does not exist.");
 
         string beforeJson = AuditJson.Serialize(transaction.ToAuditSnapshot());
 
@@ -121,11 +121,11 @@ public sealed class TransactionService(
         Guid id, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
         if (!CanMutate(role))
-            return Result.Failure("You do not have permission to delete transactions.");
+            return Result.Failure(ErrorCode.Forbidden, "You do not have permission to delete transactions.");
 
         var transaction = await repository.GetByIdAsync(id, companyId, ct);
         if (transaction is null)
-            return Result.Failure("Transaction not found.");
+            return Result.Failure(ErrorCode.NotFound, "Transaction not found.");
 
         string beforeJson = AuditJson.Serialize(transaction.ToAuditSnapshot());
 

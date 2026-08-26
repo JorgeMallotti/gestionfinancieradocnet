@@ -27,7 +27,7 @@ public sealed class ReportService(
         Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
         if (IsInvalidRange(from, to))
-            return Result<byte[]>.Failure("'From' cannot be after 'To'.");
+            return Result<byte[]>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
 
         var data = await BuildReportDataAsync(companyId, from, to, ct);
         byte[] bytes = await pdf.GenerateAsync(data, ct);
@@ -38,7 +38,7 @@ public sealed class ReportService(
         Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
         if (IsInvalidRange(from, to))
-            return Result<byte[]>.Failure("'From' cannot be after 'To'.");
+            return Result<byte[]>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
 
         var data = await BuildReportDataAsync(companyId, from, to, ct);
         byte[] bytes = await excel.GenerateAsync(data, ct);

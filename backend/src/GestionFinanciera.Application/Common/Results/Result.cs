@@ -10,11 +10,18 @@ public readonly record struct Result
 
     public bool IsFailure => !IsSuccess;
 
+    /// <summary>Typed error code (see <see cref="ErrorCode"/>). Only meaningful on failure.</summary>
+    public ErrorCode Code { get; init; }
+
     public string? Error { get; init; }
 
     public static Result Success() => new() { IsSuccess = true };
 
-    public static Result Failure(string error) => new() { IsSuccess = false, Error = error };
+    public static Result Failure(ErrorCode code, string error) =>
+        new() { IsSuccess = false, Code = code, Error = error };
+
+    /// <summary>Failure with the default <see cref="ErrorCode.Validation"/> code.</summary>
+    public static Result Failure(string error) => Failure(ErrorCode.Validation, error);
 }
 
 /// <summary>Result pattern with a payload.</summary>
@@ -26,9 +33,16 @@ public readonly record struct Result<T>
 
     public T? Value { get; init; }
 
+    /// <summary>Typed error code (see <see cref="ErrorCode"/>). Only meaningful on failure.</summary>
+    public ErrorCode Code { get; init; }
+
     public string? Error { get; init; }
 
     public static Result<T> Success(T value) => new() { IsSuccess = true, Value = value };
 
-    public static Result<T> Failure(string error) => new() { IsSuccess = false, Error = error };
+    public static Result<T> Failure(ErrorCode code, string error) =>
+        new() { IsSuccess = false, Code = code, Error = error };
+
+    /// <summary>Failure with the default <see cref="ErrorCode.Validation"/> code.</summary>
+    public static Result<T> Failure(string error) => Failure(ErrorCode.Validation, error);
 }

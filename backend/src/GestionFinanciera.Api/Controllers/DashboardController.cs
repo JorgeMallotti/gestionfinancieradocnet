@@ -24,7 +24,7 @@ public sealed class DashboardController(IDashboardService service) : ControllerB
     {
         var companyId = User.GetCompanyId();
         var result = await service.GetSummaryAsync(companyId, from, to, ct);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new ProblemDetails { Detail = result.Error });
+        return this.ToActionResult(result);
     }
 
     /// <summary>Amount per category for one type (Income or Expense), with percentages.</summary>
@@ -34,7 +34,7 @@ public sealed class DashboardController(IDashboardService service) : ControllerB
     {
         var companyId = User.GetCompanyId();
         var result = await service.GetBreakdownAsync(companyId, type, from, to, ct);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new ProblemDetails { Detail = result.Error });
+        return this.ToActionResult(result);
     }
 
     /// <summary>Monthly income/expense/balance series for charts.</summary>
@@ -44,6 +44,6 @@ public sealed class DashboardController(IDashboardService service) : ControllerB
     {
         var companyId = User.GetCompanyId();
         var result = await service.GetMonthlyAsync(companyId, from, to, ct);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new ProblemDetails { Detail = result.Error });
+        return this.ToActionResult(result);
     }
 }

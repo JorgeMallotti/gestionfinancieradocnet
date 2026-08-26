@@ -16,7 +16,7 @@ public sealed class DashboardService(ITransactionRepository repository) : IDashb
         Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
         if (IsInvalidRange(from, to))
-            return Result<DashboardSummaryDto>.Failure("'From' cannot be after 'To'.");
+            return Result<DashboardSummaryDto>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
 
         decimal income = await repository.SumByTypeAsync(companyId, TransactionType.Income, from, to, ct);
         decimal expenses = await repository.SumByTypeAsync(companyId, TransactionType.Expense, from, to, ct);
@@ -30,7 +30,7 @@ public sealed class DashboardService(ITransactionRepository repository) : IDashb
         Guid companyId, TransactionType type, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
         if (IsInvalidRange(from, to))
-            return Result<IReadOnlyList<CategoryBreakdownDto>>.Failure("'From' cannot be after 'To'.");
+            return Result<IReadOnlyList<CategoryBreakdownDto>>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
 
         var rows = await repository.GetCategoryBreakdownAsync(companyId, type, from, to, ct);
         decimal total = rows.Sum(r => r.Amount);
@@ -49,7 +49,7 @@ public sealed class DashboardService(ITransactionRepository repository) : IDashb
         Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
         if (IsInvalidRange(from, to))
-            return Result<IReadOnlyList<MonthlyPointDto>>.Failure("'From' cannot be after 'To'.");
+            return Result<IReadOnlyList<MonthlyPointDto>>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
 
         var points = await repository.GetMonthlySeriesAsync(companyId, from, to, ct);
 
