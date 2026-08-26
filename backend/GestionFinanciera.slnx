@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GestionFinanciera.Api/GestionFinanciera.Api.csproj" />
+    <Project Path="src/GestionFinanciera.Application/GestionFinanciera.Application.csproj" />
+    <Project Path="src/GestionFinanciera.Domain/GestionFinanciera.Domain.csproj" />
+    <Project Path="src/GestionFinanciera.Infrastructure/GestionFinanciera.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GestionFinanciera.IntegrationTests/GestionFinanciera.IntegrationTests.csproj" />
+    <Project Path="tests/GestionFinanciera.UnitTests/GestionFinanciera.UnitTests.csproj" />
+  </Folder>
+</Solution>

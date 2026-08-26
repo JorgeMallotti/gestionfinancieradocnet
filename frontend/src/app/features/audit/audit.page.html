@@ -1,0 +1,53 @@
+<div class="audit">
+    <header class="page-header">
+        <h1>{{ 'audit.title' | translate }}</h1>
+        <mat-icon class="admin-badge" matTooltip="{{ 'audit.adminOnly' | translate }}">admin_panel_settings</mat-icon>
+    </header>
+
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <mat-card>
+        <mat-card-content class="table-wrapper">
+            <table mat-table [dataSource]="entries()">
+                <ng-container matColumnDef="createdAt">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'audit.timestamp' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="entity">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'audit.entity' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.entity }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="action">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'audit.action' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">
+                        <span class="action-chip" [class]="actionClass(row.action)">{{ row.action }}</span>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="userId">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'audit.user' | translate }}</th>
+                    <td mat-cell *matCellDef="let row" class="mono">{{ row.userId | slice: 0:8 }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="ipAddress">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'audit.ip' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.ipAddress || '—' }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+
+            @if (entries().length === 0 && !loading()) {
+            <p class="empty">{{ 'common.noData' | translate }}</p>
+            }
+
+            <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageSizeOptions]="[10, 20, 50]"
+                [pageIndex]="page() - 1" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
+        </mat-card-content>
+    </mat-card>
+</div>

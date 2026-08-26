@@ -1,0 +1,63 @@
+<div class="categories">
+    <header class="page-header">
+        <h1>{{ 'categories.title' | translate }}</h1>
+        @if (canMutate()) {
+        <button mat-raised-button color="primary" (click)="openCreate()">
+            <mat-icon>add</mat-icon>
+            {{ 'categories.create' | translate }}
+        </button>
+        }
+    </header>
+
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <mat-card>
+        <mat-card-content class="table-wrapper">
+            <table mat-table [dataSource]="categories()">
+                <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'categories.name' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'categories.description' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">{{ row.description || ('categories.noDescription' | translate) }}
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="isDefault">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'categories.isDefault' | translate }}</th>
+                    <td mat-cell *matCellDef="let row">
+                        @if (row.isDefault) {
+                        <mat-chip>{{ 'categories.defaultChip' | translate }}</mat-chip>
+                        }
+                    </td>
+                </ng-container>
+
+                @if (canMutate()) {
+                <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'common.actions' | translate }}</th>
+                    <td mat-cell *matCellDef="let row" class="actions-cell">
+                        <button mat-icon-button (click)="openEdit(row)" [attr.aria-label]="'common.edit' | translate">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="confirmDelete(row)" [disabled]="row.isDefault"
+                            [attr.aria-label]="'common.delete' | translate">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </td>
+                </ng-container>
+                }
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+            </table>
+
+            @if (categories().length === 0 && !loading()) {
+            <p class="empty">{{ 'common.noData' | translate }}</p>
+            }
+        </mat-card-content>
+    </mat-card>
+</div>
