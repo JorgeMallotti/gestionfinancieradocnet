@@ -3,6 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -10,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../core/services/auth.service';
+import { DemoAccount } from '../../core/models';
 import { ToastService } from '../../shared/services/toast.service';
 import { authErrorKey, extractError } from '../../shared/utils/errors';
 
@@ -23,6 +25,7 @@ import { authErrorKey, extractError } from '../../shared/utils/errors';
     ReactiveFormsModule,
     RouterLink,
     MatCardModule,
+    MatDividerModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -46,6 +49,43 @@ export class LoginPage {
 
   protected readonly hidePassword = signal(true);
   protected readonly loading = signal(false);
+
+  /** Demo quick-access buttons (hidden when the backend has none). */
+  protected readonly demoAccounts = signal<DemoAccount[]>([]);
+  protected readonly demoLoggingIn = signal<string | null>(null);
+
+  constructor() {
+    void this.loadDemoAccounts();
+  }
+
+  private async loadDemoAccounts(): Promise<void> {
+    try {
+      this.demoAccounts.set(await this.auth.getDemoAccounts());
+    } catch {
+      this.demoAccounts.set([]); // demo section hidden if the API is unreachable
+    }
+  }
+
+  protected roleLabel(role: string): string {
+    return this.translate.instant(`auth.demo.roles.${role.toLowerCase()}`);
+  }
+
+  protected roleDescription(role: string): string {
+    return this.translate.instant(`auth.demo.roles.${role.toLowerCase()}Description`);
+  }
+
+  async quickLogin(key: string): Promise<void> {
+    this.demoLoggingIn.set(key);
+    try {
+      await this.auth.demoLogin(key);
+      await this.router.navigate(['/dashboard']);
+    } catch (error) {
+      const message = extractError(error);
+      this.toast.error(this.translate.instant(authErrorKey(message)));
+    } finally {
+      this.demoLoggingIn.set(null);
+    }
+  }
 
   async submit(): Promise<void> {
     if (this.form.invalid) return;

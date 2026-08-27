@@ -45,5 +45,28 @@
         <mat-card-actions align="end">
             <a mat-button routerLink="/auth/register">{{ 'auth.register' | translate }}</a>
         </mat-card-actions>
+
+        @if (demoAccounts().length > 0) {
+        <div class="demo-access">
+            <mat-divider></mat-divider>
+            <h2 class="demo-title">{{ 'auth.demoTitle' | translate }}</h2>
+            <p class="demo-subtitle">{{ 'auth.demoSubtitle' | translate }}</p>
+
+            @for (account of demoAccounts(); track account.key) {
+            <button mat-stroked-button class="full-width demo-button" type="button"
+                [disabled]="demoLoggingIn() !== null" (click)="quickLogin(account.key)">
+                @if (demoLoggingIn() === account.key) {
+                <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                <mat-icon>account_circle</mat-icon>
+                }
+                <span class="demo-button-text">
+                    <strong>{{ roleLabel(account.role) }}</strong>
+                    <small>{{ roleDescription(account.role) }}</small>
+                </span>
+            </button>
+            }
+        </div>
+        }
     </mat-card>
 </div>

@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginDto, RegisterDto, UserRole } from '../models';
+import { AuthResponse, DemoAccount, LoginDto, RegisterDto, UserRole } from '../models';
 
 /**
  * Authentication state (Signals) + API calls.
@@ -51,6 +51,25 @@ export class AuthService {
   async register(payload: RegisterDto): Promise<AuthResponse> {
     const auth = await firstValueFrom(
       this.http.post<AuthResponse>(`${environment.apiBaseUrl}/auth/register`, payload),
+    );
+    this.setSession(auth);
+    return auth;
+  }
+
+  /** Public demo accounts for the one-click quick access (no credentials). */
+  async getDemoAccounts(): Promise<DemoAccount[]> {
+    return firstValueFrom(
+      this.http.get<DemoAccount[]>(`${environment.apiBaseUrl}/auth/demo-accounts`),
+    );
+  }
+
+  /** One-click demo login — the credentials never leave the backend. */
+  async demoLogin(account: string): Promise<AuthResponse> {
+    const auth = await firstValueFrom(
+      this.http.post<AuthResponse>(
+        `${environment.apiBaseUrl}/auth/demo-login`,
+        { account },
+      ),
     );
     this.setSession(auth);
     return auth;

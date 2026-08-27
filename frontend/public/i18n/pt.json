@@ -55,7 +55,17 @@
     "errorInvalidCredentials": "Email ou palavra-passe incorretos.",
     "errorEmailInvalid": "Introduz um email válido.",
     "errorPasswordMin": "A palavra-passe deve ter pelo menos 8 caracteres.",
-    "errorPasswordMismatch": "As palavras-passe não coincidem."
+    "errorPasswordMismatch": "As palavras-passe não coincidem.",
+    "demoTitle": "Acesso rápido de demonstração",
+    "demoSubtitle": "Um clique, sem registo. Explora a app com diferentes funções.",
+    "roles": {
+      "admin": "Administrador",
+      "adminDescription": "Acesso total: utilizadores, categorias, transações e registo de auditoria.",
+      "finance": "Finanças",
+      "financeDescription": "Relatórios: exportações PDF/Excel e envio por email.",
+      "user": "Utilizador",
+      "userDescription": "Operações do dia a dia com categorias e transações."
+    }
   },
   "dashboard": {
     "title": "Painel",

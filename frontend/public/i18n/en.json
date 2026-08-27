@@ -55,7 +55,17 @@
     "errorInvalidCredentials": "Invalid email or password.",
     "errorEmailInvalid": "Enter a valid email address.",
     "errorPasswordMin": "Password must be at least 8 characters.",
-    "errorPasswordMismatch": "Passwords do not match."
+    "errorPasswordMismatch": "Passwords do not match.",
+    "demoTitle": "Quick demo access",
+    "demoSubtitle": "One click, no registration. Explore the app with different roles.",
+    "roles": {
+      "admin": "Administrator",
+      "adminDescription": "Full access: users, categories, transactions and the audit log.",
+      "finance": "Finance",
+      "financeDescription": "Reports: PDF/Excel exports and email delivery.",
+      "user": "User",
+      "userDescription": "Day-to-day operations on categories and transactions."
+    }
   },
   "dashboard": {
     "title": "Dashboard",

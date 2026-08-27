@@ -65,6 +65,10 @@ public static class DependencyInjection
         // SMTP (reports by email) — real values via user-secrets / App Settings
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
 
+        // Demo quick access (MVP demo) — enabled via Demo:Enabled config
+        services.Configure<DemoOptions>(configuration.GetSection(DemoOptions.SectionName));
+        services.AddScoped<DemoSeeder>();
+
         // Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoryService, CategoryService>();

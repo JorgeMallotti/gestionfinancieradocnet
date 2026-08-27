@@ -1,5 +1,7 @@
 using FluentValidation;
 
+using GestionFinanciera.Application.Features.Auth.DTOs;
+using GestionFinanciera.Application.Features.Auth.Validators;
 using GestionFinanciera.Application.Features.Categories.DTOs;
 using GestionFinanciera.Application.Features.Categories.Validators;
 using GestionFinanciera.Application.Features.Transactions.DTOs;
@@ -7,6 +9,37 @@ using GestionFinanciera.Application.Features.Transactions.Validators;
 using GestionFinanciera.Domain.Enums;
 
 namespace GestionFinanciera.UnitTests;
+
+public sealed class DemoLoginValidatorTests
+{
+    private readonly DemoLoginValidator _validator = new();
+
+    [Fact]
+    public async Task DemoLogin_ValidAccount_HasNoErrors()
+    {
+        var result = await _validator.ValidateAsync(new DemoLoginDto("admin"));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task DemoLogin_EmptyAccount_HasError()
+    {
+        var result = await _validator.ValidateAsync(new DemoLoginDto(" "));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Account");
+    }
+
+    [Fact]
+    public async Task DemoLogin_TooLongAccount_HasError()
+    {
+        var result = await _validator.ValidateAsync(new DemoLoginDto(new string('a', 33)));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Account");
+    }
+}
 
 public sealed class CategoryValidatorTests
 {

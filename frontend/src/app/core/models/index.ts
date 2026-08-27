@@ -29,6 +29,14 @@ export interface LoginDto {
   password: string;
 }
 
+/** Public demo account metadata for the one-click quick access (no credentials). */
+export interface DemoAccount {
+  key: string;
+  role: UserRole;
+  companyName: string;
+  description: string;
+}
+
 // ── Pagination ──────────────────────────────────────────────────────────
 
 export interface PagedResult<T> {

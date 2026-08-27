@@ -4,6 +4,7 @@ using System.Text;
 using FluentValidation;
 
 using GestionFinanciera.Application.Common.Results;
+using GestionFinanciera.Application.Features.Auth;
 using GestionFinanciera.Application.Features.Auth.DTOs;
 using GestionFinanciera.Application.Features.Auth.Interfaces;
 using GestionFinanciera.Domain.Entities;
@@ -29,11 +30,12 @@ public sealed class AuthService(
     IOptions<JwtOptions> jwtOptions,
     IValidator<RegisterDto> registerValidator,
     IValidator<LoginDto> loginValidator,
+    IValidator<DemoLoginDto> demoLoginValidator,
+    IOptions<DemoOptions> demoOptions,
     ILogger<AuthService> logger) : IAuthService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
-
-    private static readonly string[] DefaultRoles = ["Admin", "Finance", "User"];
+    private readonly DemoOptions _demoOptions = demoOptions.Value;
 
     private static readonly (string Name, string? Description)[] DefaultCategories =
     [
@@ -53,7 +55,7 @@ public sealed class AuthService(
         if (existing is not null)
             return Result<(AuthResponseDto, string)>.Failure("An account with this email already exists.");
 
-        await EnsureRolesAsync(ct);
+        await RoleSeeder.EnsureRolesAsync(roleManager, ct);
 
         // 1. Company (tenant) — created ONLY here, from the signup payload.
         var company = new Company { Name = dto.CompanyName.Trim() };
@@ -199,16 +201,34 @@ public sealed class AuthService(
         return Result.Success();
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
-    private async Task EnsureRolesAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<DemoAccountDto>> GetDemoAccountsAsync(CancellationToken ct)
     {
-        foreach (string role in DefaultRoles)
-        {
-            if (!await roleManager.RoleExistsAsync(role))
-                await roleManager.CreateAsync(new IdentityRole<Guid>(role));
-        }
+        if (!_demoOptions.Enabled)
+            return [];
+
+        return DemoCatalog.ToDtos();
     }
+
+    public async Task<Result<(AuthResponseDto Auth, string RefreshToken)>> DemoLoginAsync(
+        DemoLoginDto dto, CancellationToken ct)
+    {
+        var validation = await demoLoginValidator.ValidateAsync(dto, ct);
+        if (!validation.IsValid)
+            return Result<(AuthResponseDto, string)>.Failure(validation.Errors.First().ErrorMessage);
+
+        if (!_demoOptions.Enabled)
+            return Result<(AuthResponseDto, string)>.Failure("Demo access is disabled.");
+
+        DemoCatalog.DemoAccount? account = DemoCatalog.Find(dto.Account);
+        if (account is null)
+            return Result<(AuthResponseDto, string)>.Failure("Unknown demo account.");
+
+        // Reuse the normal login flow with the seeded demo credentials — the
+        // password never leaves the backend.
+        return await LoginAsync(new LoginDto(account.Email, _demoOptions.Password), ct);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
 
     private static RefreshToken CreateRefreshTokenEntity(Guid userId, string tokenValue) =>
         new()

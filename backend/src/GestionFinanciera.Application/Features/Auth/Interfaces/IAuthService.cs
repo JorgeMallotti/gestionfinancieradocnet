@@ -19,6 +19,19 @@ public interface IAuthService
         LoginDto dto, CancellationToken ct);
 
     /// <summary>
+    /// Lists the demo quick-access accounts (public metadata only — never
+    /// credentials). Returns an empty list when the demo is disabled.
+    /// </summary>
+    Task<IReadOnlyList<DemoAccountDto>> GetDemoAccountsAsync(CancellationToken ct);
+
+    /// <summary>
+    /// One-click demo login: resolves the well-known account and signs in with
+    /// the seeded credentials, which never leave the backend.
+    /// </summary>
+    Task<Result<(AuthResponseDto Auth, string RefreshToken)>> DemoLoginAsync(
+        DemoLoginDto dto, CancellationToken ct);
+
+    /// <summary>
     /// Rotates the refresh token and issues a new access token.
     /// Returns the new refresh token value so the caller can set the httpOnly cookie.
     /// </summary>
