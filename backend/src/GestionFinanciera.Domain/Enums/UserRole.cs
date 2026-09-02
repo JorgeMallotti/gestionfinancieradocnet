@@ -1,9 +1,9 @@
 namespace GestionFinanciera.Domain.Enums;
 
-/// <summary>Application roles, per company. Stored as Identity roles.</summary>
+/// <summary>Application roles, stored as Identity roles. Bank demo model:
+/// Admin = bank operator/mediator, User = client (person or company).</summary>
 public enum UserRole
 {
     Admin = 1,
-    Finance = 2,
-    User = 3,
+    User = 2,
 }

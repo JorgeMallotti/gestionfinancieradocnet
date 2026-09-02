@@ -1,7 +1,9 @@
 namespace GestionFinanciera.Domain.Entities;
 
 /// <summary>
-/// A transaction category (e.g. Marketing, Sales, Operations). Scoped to a company.
+/// A movement tag from the Admin-managed catalog (e.g. Nómina, Compra).
+/// Clients may optionally tag a movement with one category for their own
+/// organization. Visible to every client of the bank.
 /// </summary>
 public sealed class Category : BaseEntity
 {
@@ -13,13 +15,7 @@ public sealed class Category : BaseEntity
 
     public string? Description { get; set; }
 
-    /// <summary>
-    /// True for the seed categories created automatically when a company signs up
-    /// (Marketing, Sales, Operations).
-    /// </summary>
-    public bool IsDefault { get; set; }
-
-    public ICollection<Transaction> Transactions { get; set; } = [];
+    public ICollection<Movement> Movements { get; set; } = [];
 
     /// <summary>
     /// Scalar-only projection for the audit trail. Serializing the entity itself
@@ -30,7 +26,6 @@ public sealed class Category : BaseEntity
         Id,
         Name,
         Description,
-        IsDefault,
         CreatedAt,
         UpdatedAt,
     };

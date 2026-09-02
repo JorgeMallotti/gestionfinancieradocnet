@@ -22,7 +22,7 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 | 5   | [Module Convention (.NET Backend)](#5-module-convention-net-backend)                                |
 | 6   | [Module Convention (Angular Frontend)](#6-module-convention-angular-frontend)                       |
 | 7   | [Database Migration Rules (EF Core — Strict)](#7-database-migration-rules-ef-core--strict)          |
-| 8   | [Tenancy Rules (Single Bank — Multitenant-Ready)](#8-tenancy-rules-single-bank--multitenant-ready)     |
+| 8   | [Tenancy Rules (Single Bank — Multitenant-Ready)](#8-tenancy-rules-single-bank--multitenant-ready)  |
 | 9   | [Git Workflow: feat/\* → staging → main](#9-git-workflow-feat--staging--main)                       |
 | 10  | [Styling — Angular Material (Exclusive)](#10-styling--angular-material-exclusive)                   |
 | 11  | [Internationalization (i18n) — @ngx-translate](#11-internationalization-i18n--ngx-translate)        |
@@ -53,29 +53,29 @@ Before writing a single line of code, read:
 
 Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit approval.**
 
-| Decision          | Choice                                                                                               | Why                                                              |
-| ----------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Backend           | **.NET 10 Web API** (modern LTS)                                                                     | Employability in Portugal; modern, supported, corporate standard |
-| Frontend          | **Angular 21** (standalone components) + **Angular Material**                                        | Corporate standard for .NET shops; ready components              |
-| Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod              | Same engine dev/prod (no drift)                                  |
-| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                 | Most requested pattern in .NET job interviews                    |
-| Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                         | "Corporate level" — what real companies ask for                  |
-| Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                          | Secure; fixes the localStorage token debt of the old project     |
-| Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**     | Bank demo model (Jorge, 2026-09-02)                             |
-| Multi-tenancy     | **Single bank in the MVP** — `CompanyId` kept on all tables + global query filters (multitenant-ready) | Company = the bank; avoids painful migrations later             |
-| PDF               | **QuestPDF**                                                                                         | Free for this use case, de-facto standard in .NET                |
-| Excel export      | **ClosedXML**                                                                                        | Free (MIT), standard                                             |
-| Email             | **MailKit** (SMTP) or SendGrid SDK                                                                   | MailKit is the modern standard (SmtpClient is legacy)            |
-| Validation        | **FluentValidation**                                                                                 | Seen in almost every .NET job offer                              |
-| Logging           | **Serilog** + Application Insights (Azure)                                                           | Structured logging, corporate standard                           |
-| API docs          | **Swagger / OpenAPI**                                                                                | Free documentation, testable endpoints                           |
-| Error contract    | **ProblemDetails** (RFC 7807)                                                                        | Standard ASP.NET Core format                                     |
-| Tests             | **xUnit + FluentAssertions** (unit), **WebApplicationFactory** (integration)                         | Corporate standard                                               |
-| CI/CD             | **GitHub Actions** (backend → App Service, frontend → Static Web Apps)                               | Free, standard                                                   |
-| Frontend state    | **Angular Signals + inject-based services**                                                          | Modern Angular idiom (stable since 17, mature in 21)             |
-| i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                          | Community standard, same pattern as old project                  |
-| Language of code  | English everywhere (code, comments, commits, docs)                                                   | Global standard                                                  |
-| Conversation lang | Academic explanations to Jorge in **his language (es/pt)** — technical terms kept in English         | §15                                                              |
+| Decision          | Choice                                                                                                 | Why                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Employability in Portugal; modern, supported, corporate standard |
+| Frontend          | **Angular 21** (standalone components) + **Angular Material**                                          | Corporate standard for .NET shops; ready components              |
+| Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod                | Same engine dev/prod (no drift)                                  |
+| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Most requested pattern in .NET job interviews                    |
+| Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                           | "Corporate level" — what real companies ask for                  |
+| Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                            | Secure; fixes the localStorage token debt of the old project     |
+| Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**         | Bank demo model (Jorge, 2026-09-02)                              |
+| Multi-tenancy     | **Single bank in the MVP** — `CompanyId` kept on all tables + global query filters (multitenant-ready) | Company = the bank; avoids painful migrations later              |
+| PDF               | **QuestPDF**                                                                                           | Free for this use case, de-facto standard in .NET                |
+| Excel export      | **ClosedXML**                                                                                          | Free (MIT), standard                                             |
+| Email             | **MailKit** (SMTP) or SendGrid SDK                                                                     | MailKit is the modern standard (SmtpClient is legacy)            |
+| Validation        | **FluentValidation**                                                                                   | Seen in almost every .NET job offer                              |
+| Logging           | **Serilog** + Application Insights (Azure)                                                             | Structured logging, corporate standard                           |
+| API docs          | **Swagger / OpenAPI**                                                                                  | Free documentation, testable endpoints                           |
+| Error contract    | **ProblemDetails** (RFC 7807)                                                                          | Standard ASP.NET Core format                                     |
+| Tests             | **xUnit + FluentAssertions** (unit), **WebApplicationFactory** (integration)                           | Corporate standard                                               |
+| CI/CD             | **GitHub Actions** (backend → App Service, frontend → Static Web Apps)                                 | Free, standard                                                   |
+| Frontend state    | **Angular Signals + inject-based services**                                                            | Modern Angular idiom (stable since 17, mature in 21)             |
+| i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                            | Community standard, same pattern as old project                  |
+| Language of code  | English everywhere (code, comments, commits, docs)                                                     | Global standard                                                  |
+| Conversation lang | Academic explanations to Jorge in **his language (es/pt)** — technical terms kept in English           | §15                                                              |
 
 ### 2.1 Product Model — Bank Demo (LOCKED 2026-09-02)
 

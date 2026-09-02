@@ -4,6 +4,9 @@ namespace GestionFinanciera.Application.Features.Auth;
 
 /// <summary>
 /// Well-known demo accounts for the one-click quick access (MVP demo).
+/// Bank model: ONE seeded bank (Acme Demo Bank) whose Admin is the operator,
+/// plus two demo clients (a person and a company) so visitors can explore
+/// P2P transfers, loans and claims with the demo buttons.
 ///
 /// Security model (AGENTS.md §13): the credentials live ONLY in the backend
 /// (Infrastructure seeder + Demo:Password config). The public API exposes the
@@ -11,7 +14,7 @@ namespace GestionFinanciera.Application.Features.Auth;
 /// </summary>
 public static class DemoCatalog
 {
-    public const string CompanyName = "Acme Demo SL";
+    public const string CompanyName = "Acme Demo Bank";
 
     public sealed record DemoAccount(
         string Key,
@@ -27,15 +30,15 @@ public static class DemoCatalog
         new("admin",
             "Admin",
             "demo.admin@gestfin.local",
-            "Full access: users, categories, transactions and the audit log."),
-        new("finance",
-            "Finance",
-            "demo.finance@gestfin.local",
-            "Reports: PDF/Excel exports and email delivery."),
-        new("user",
+            "Bank operator: approves clients, decides loans, mediates claims."),
+        new("ana",
             "User",
-            "demo.user@gestfin.local",
-            "Day-to-day operations on categories and transactions."),
+            "demo.ana@gestfin.local",
+            "Client (person): transfer money and open claims."),
+        new("xyz",
+            "User",
+            "demo.xyz@gestfin.local",
+            "Client (company): transfer money and open claims."),
     ];
 
     /// <summary>Resolves a demo account by key (case-insensitive).</summary>

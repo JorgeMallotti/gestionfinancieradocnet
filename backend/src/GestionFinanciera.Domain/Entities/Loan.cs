@@ -29,6 +29,9 @@ public sealed class Loan : BaseEntity
 
     public LoanStatus Status { get; set; } = LoanStatus.Pending;
 
+    /// <summary>How much the client has already paid back (full or partial repayments).</summary>
+    public decimal RepaidAmount { get; set; }
+
     /// <summary>Admin user that approved/rejected this loan.</summary>
     public Guid? DecidedByUserId { get; set; }
 
@@ -45,6 +48,7 @@ public sealed class Loan : BaseEntity
         Id,
         ClientAccountId,
         Amount,
+        RepaidAmount,
         Currency,
         Reason,
         Status,

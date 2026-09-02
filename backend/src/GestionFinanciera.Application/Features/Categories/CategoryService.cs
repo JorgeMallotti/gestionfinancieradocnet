@@ -5,20 +5,19 @@ using GestionFinanciera.Application.Common.Pagination;
 using GestionFinanciera.Application.Common.Results;
 using GestionFinanciera.Application.Features.Categories.DTOs;
 using GestionFinanciera.Application.Features.Categories.Interfaces;
-using GestionFinanciera.Application.Features.Transactions.Interfaces;
+using GestionFinanciera.Application.Features.Movements.Interfaces;
 using GestionFinanciera.Domain.Entities;
 using GestionFinanciera.Domain.Enums;
 
 namespace GestionFinanciera.Application.Features.Categories;
 
 /// <summary>
-/// Category business rules: unique names per company, default categories are
-/// protected, categories with transactions cannot be deleted, role enforcement
-/// and audit trail. Data access is delegated to the repository.
+/// Category business rules. The catalog is managed by the bank Admin alone:
+/// unique names, categories tagged by movements cannot be deleted, audit trail.
 /// </summary>
 public sealed class CategoryService(
     ICategoryRepository repository,
-    ITransactionRepository transactions,
+    IMovementRepository movements,
     IAuditService audit,
     IValidator<CreateCategoryDto> createValidator,
     IValidator<UpdateCategoryDto> updateValidator) : ICategoryService
@@ -53,8 +52,8 @@ public sealed class CategoryService(
     public async Task<Result<CategoryDto>> CreateAsync(
         CreateCategoryDto dto, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
-        if (!CanMutate(role))
-            return Result<CategoryDto>.Failure(ErrorCode.Forbidden, "You do not have permission to create categories.");
+        if (!CanManageCatalog(role))
+            return Result<CategoryDto>.Failure(ErrorCode.Forbidden, "Only the bank Admin can manage the category catalog.");
 
         var validation = await createValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
@@ -81,8 +80,8 @@ public sealed class CategoryService(
     public async Task<Result<CategoryDto>> UpdateAsync(
         Guid id, UpdateCategoryDto dto, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
-        if (!CanMutate(role))
-            return Result<CategoryDto>.Failure(ErrorCode.Forbidden, "You do not have permission to update categories.");
+        if (!CanManageCatalog(role))
+            return Result<CategoryDto>.Failure(ErrorCode.Forbidden, "Only the bank Admin can manage the category catalog.");
 
         var validation = await updateValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
@@ -113,18 +112,15 @@ public sealed class CategoryService(
     public async Task<Result> DeleteAsync(
         Guid id, Guid companyId, Guid userId, string role, string? ipAddress, CancellationToken ct)
     {
-        if (!CanMutate(role))
-            return Result.Failure(ErrorCode.Forbidden, "You do not have permission to delete categories.");
+        if (!CanManageCatalog(role))
+            return Result.Failure(ErrorCode.Forbidden, "Only the bank Admin can manage the category catalog.");
 
         var category = await repository.GetByIdAsync(id, companyId, ct);
         if (category is null)
             return Result.Failure(ErrorCode.NotFound, "Category not found.");
 
-        if (category.IsDefault)
-            return Result.Failure(ErrorCode.Conflict, "Default categories cannot be deleted.");
-
-        if (await transactions.CountByCategoryAsync(companyId, id, ct) > 0)
-            return Result.Failure(ErrorCode.Conflict, "This category has transactions and cannot be deleted.");
+        if (await movements.CountByCategoryAsync(companyId, id, ct) > 0)
+            return Result.Failure(ErrorCode.Conflict, "This category is used by movements and cannot be deleted.");
 
         string beforeJson = AuditJson.Serialize(category.ToAuditSnapshot());
 
@@ -136,6 +132,6 @@ public sealed class CategoryService(
         return Result.Success();
     }
 
-    private static bool CanMutate(string role) =>
-        role is nameof(UserRole.Admin) or nameof(UserRole.Finance);
+    private static bool CanManageCatalog(string role) =>
+        role == nameof(UserRole.Admin);
 }
