@@ -112,6 +112,40 @@ public sealed class DemoSeeder(
         await dbContext.Loans.Where(l => l.CompanyId == company.Id).ExecuteDeleteAsync(ct);
         await dbContext.Movements.Where(m => m.CompanyId == company.Id).ExecuteDeleteAsync(ct);
 
+        // ── Ephemeral visitor accounts ──────────────────────────────────────
+        // The public demo is a ~24-hour sandbox: accounts created by visitors
+        // through the signup flow are removed on every reset, so the demo world
+        // always returns exactly to its seed (the signup explains this). The
+        // seeded identities (bank operator, Ana, XYZ) are permanent — never
+        // touched. Order matters (FKs are Restrict):
+        //   audit/claims/loans/movements deleted above → notifications (no FK,
+        //   explicit) → client accounts → identity users (roles + refresh
+        //   tokens are handled by Identity's cascade).
+        string[] demoEmails = DemoCatalog.Accounts.Select(a => a.Email).ToArray();
+
+        List<ApplicationUser> visitorUsers = await dbContext.Users
+            .Where(u => u.CompanyId == company.Id && !demoEmails.Contains(u.Email!))
+            .ToListAsync(ct);
+
+        if (visitorUsers.Count > 0)
+        {
+            List<Guid> visitorIds = visitorUsers.Select(u => u.Id).ToList();
+
+            await dbContext.Notifications
+                .Where(n => visitorIds.Contains(n.UserId))
+                .ExecuteDeleteAsync(ct);
+
+            await dbContext.ClientAccounts
+                .Where(a => visitorIds.Contains(a.OwnerUserId))
+                .ExecuteDeleteAsync(ct);
+
+            foreach (ApplicationUser visitor in visitorUsers)
+                await userManager.DeleteAsync(visitor);
+
+            logger.LogInformation(
+                "Reset removed {Count} ephemeral visitor account(s).", visitorUsers.Count);
+        }
+
         // Restore the accounts to their starting balances, then re-seed examples.
         foreach (DemoCatalog.DemoAccount account in DemoCatalog.Accounts)
         {

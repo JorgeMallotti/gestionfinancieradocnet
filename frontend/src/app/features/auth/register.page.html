@@ -73,6 +73,12 @@
                     }
                 </button>
             </form>
+
+            <!-- Demo sandbox warning: visitor accounts are ephemeral (24h). -->
+            <div class="auth-notice" role="note">
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>{{ 'auth.ephemeralNotice' | translate }}</span>
+            </div>
         </mat-card-content>
 
         <mat-card-actions align="end">
