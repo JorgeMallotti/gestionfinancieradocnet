@@ -12,6 +12,10 @@
             <p>{{ 'auth.pendingStep2' | translate }}</p>
             <mat-divider></mat-divider>
             <p class="pending-tip">{{ 'auth.pendingTip' | translate }}</p>
+            <div class="auth-notice" role="note">
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>{{ 'auth.ephemeralNotice' | translate }}</span>
+            </div>
         </mat-card-content>
         <mat-card-actions align="end">
             <a mat-raised-button color="primary" routerLink="/auth/login">{{ 'auth.goLogin' | translate }}</a>

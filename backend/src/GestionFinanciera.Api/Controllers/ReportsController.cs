@@ -4,16 +4,20 @@ using GestionFinanciera.Application.Features.Reports.Interfaces;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GestionFinanciera.Api.Controllers;
 
 /// <summary>
 /// Report endpoints: PDF/Excel download of the CALLER'S OWN movements (any
 /// role) and report-by-email (Admin only — a paid SMTP operation).
+/// Heavy endpoints: rate limited per user ("reports") so an abuser cannot
+/// burn CPU generating documents on a loop.
 /// </summary>
 [ApiController]
 [Route("api/reports")]
 [Authorize]
+[EnableRateLimiting("reports")]
 public sealed class ReportsController(IReportService service) : ControllerBase
 {
     private const string PdfContentType = "application/pdf";
