@@ -19,8 +19,9 @@ public sealed class AccountServiceTests
 
     private readonly InMemoryAccountRepository _accounts = new();
     private readonly FakeAuditService _audit = new();
+    private readonly FakeNotificationService _notifications = new();
 
-    private AccountService CreateService() => new(_accounts, _audit);
+    private AccountService CreateService() => new(_accounts, _audit, _notifications);
 
     // ── Get my account ───────────────────────────────────────────────────
 

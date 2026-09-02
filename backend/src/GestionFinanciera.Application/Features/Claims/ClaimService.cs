@@ -6,6 +6,7 @@ using GestionFinanciera.Application.Features.Accounts.Interfaces;
 using GestionFinanciera.Application.Features.Claims.DTOs;
 using GestionFinanciera.Application.Features.Claims.Interfaces;
 using GestionFinanciera.Application.Features.Movements.Interfaces;
+using GestionFinanciera.Application.Features.Notifications.Interfaces;
 using GestionFinanciera.Domain.Entities;
 using GestionFinanciera.Domain.Enums;
 
@@ -24,6 +25,7 @@ public sealed class ClaimService(
     IMovementRepository movements,
     IAccountRepository accounts,
     IAuditService audit,
+    INotificationService notifications,
     IValidator<OpenClaimDto> openValidator,
     IValidator<ProposeCorrectionDto> proposeValidator) : IClaimService
 {
@@ -132,6 +134,18 @@ public sealed class ClaimService(
             companyId, adminUserId, AuditAction.Update, nameof(Claim), claim.Id,
             beforeJson, AuditJson.Serialize(claim.ToAuditSnapshot()), ipAddress: null, ct);
 
+        // Bell: both parties of the proposed correction are asked for consent.
+        var fromAccount = await accounts.GetByIdAsync(dto.FromAccountId, companyId, ct);
+        var toAccount = await accounts.GetByIdAsync(dto.ToAccountId, companyId, ct);
+        if (fromAccount is not null)
+            await notifications.NotifyAsync(
+                companyId, fromAccount.OwnerUserId, NotificationType.ClaimProposed,
+                claim.Id, null, dto.Amount, ct);
+        if (toAccount is not null && toAccount.Id != fromAccount?.Id)
+            await notifications.NotifyAsync(
+                companyId, toAccount.OwnerUserId, NotificationType.ClaimProposed,
+                claim.Id, null, dto.Amount, ct);
+
         return Result<ClaimDto>.Success(ClaimDto.FromEntity(claim));
     }
 
@@ -158,6 +172,11 @@ public sealed class ClaimService(
         if (!isFrom && !isTo)
             return Result<ClaimDto>.Failure(ErrorCode.Forbidden, "Only the two accounts involved can consent.");
 
+        var from = await accounts.GetByIdAsync(claim.CorrectiveFromAccountId.Value, companyId, ct);
+        var to = await accounts.GetByIdAsync(claim.CorrectiveToAccountId.Value, companyId, ct);
+        if (from is null || to is null)
+            return Result<ClaimDto>.Failure(ErrorCode.NotFound, "Corrective account not found.");
+
         string beforeJson = AuditJson.Serialize(claim.ToAuditSnapshot());
 
         // A refusal from either side closes the claim without moving money.
@@ -174,6 +193,7 @@ public sealed class ClaimService(
             return Result<ClaimDto>.Success(ClaimDto.FromEntity(claim));
         }
 
+        bool resolvedNow = false;
         if (isFrom)
             claim.PayerConsented = true;
         if (isTo)
@@ -183,11 +203,6 @@ public sealed class ClaimService(
         // movement is stacked on the ledger (never overwrites the original).
         if (claim.PayerConsented && claim.PayeeConsented)
         {
-            var from = await accounts.GetByIdAsync(claim.CorrectiveFromAccountId.Value, companyId, ct);
-            var to = await accounts.GetByIdAsync(claim.CorrectiveToAccountId.Value, companyId, ct);
-            if (from is null || to is null)
-                return Result<ClaimDto>.Failure(ErrorCode.NotFound, "Corrective account not found.");
-
             if (from.Status != AccountStatus.Active || to.Status != AccountStatus.Active)
                 return Result<ClaimDto>.Failure(ErrorCode.Conflict, "One of the accounts is not active.");
 
@@ -219,12 +234,32 @@ public sealed class ClaimService(
             claim.Status = ClaimStatus.Resolved;
             claim.ResolutionMovementId = corrective.Id;
             claim.ResolutionNote = "Both parties consented — corrective transfer executed.";
+            resolvedNow = true;
         }
 
         await claims.UpdateAsync(claim, ct);
         await audit.RecordAsync(
             companyId, clientUserId, AuditAction.Update, nameof(Claim), claim.Id,
             beforeJson, AuditJson.Serialize(claim.ToAuditSnapshot()), ipAddress: null, ct);
+
+        // Bell: after the first consent, nudge the counterparty; on resolution,
+        // tell both parties the correction was executed.
+        if (resolvedNow)
+        {
+            await notifications.NotifyAsync(
+                companyId, from.OwnerUserId, NotificationType.ClaimResolved,
+                claim.Id, null, claim.ProposedAmount.Value, ct);
+            await notifications.NotifyAsync(
+                companyId, to.OwnerUserId, NotificationType.ClaimResolved,
+                claim.Id, null, claim.ProposedAmount.Value, ct);
+        }
+        else
+        {
+            Guid counterpartyUserId = isFrom ? to.OwnerUserId : from.OwnerUserId;
+            await notifications.NotifyAsync(
+                companyId, counterpartyUserId, NotificationType.ClaimCounterpartyConsented,
+                claim.Id, consenting.DisplayName, claim.ProposedAmount.Value, ct);
+        }
 
         return Result<ClaimDto>.Success(ClaimDto.FromEntity(claim));
     }

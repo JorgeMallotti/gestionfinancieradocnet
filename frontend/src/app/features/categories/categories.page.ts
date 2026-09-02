@@ -56,9 +56,7 @@ export class CategoriesPage {
 
   protected readonly isHandsetLayout = computed(() => this.isHandset());
 
-  protected readonly displayedColumns = computed(() =>
-    this.isAdmin() ? ['name', 'description', 'actions'] : ['name', 'description'],
-  );
+  protected readonly displayedColumns = computed(() => ['name', 'description']);
 
   constructor() {
     void this.load();

@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -18,6 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AppLanguage, LanguageService } from '../../core/services/language.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { environment } from '../../../environments/environment';
+import { NotificationBellComponent } from './notification-bell.component';
 
 interface NavItem {
   route: string;
@@ -47,6 +48,7 @@ interface NavItem {
     MatSelectModule,
     MatTooltipModule,
     TranslatePipe,
+    NotificationBellComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
@@ -98,6 +100,19 @@ export class LayoutComponent {
 
   protected setLanguage(lang: AppLanguage): void {
     this.languageService.setLanguage(lang);
+  }
+
+  /**
+   * Opens Jorge's landing page in a new tab. Used from the sidebar link —
+   * window.open is explicit and immune to the sidenav overlay closing the
+   * anchor before the browser follows the href. Closes the overlay sidenav
+   * on handset after opening.
+   */
+  protected openLandingAndClose(sidenav: MatSidenav): void {
+    window.open(this.landingUrl, '_blank', 'noopener,noreferrer');
+    if (this.mode() === 'over') {
+      void sidenav.close();
+    }
   }
 
   protected logout(): void {

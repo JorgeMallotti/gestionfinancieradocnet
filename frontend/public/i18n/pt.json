@@ -148,6 +148,7 @@
   },
   "loans": {
     "request": "Pedir empréstimo",
+    "requested": "Pedido enviado — o operador vai analisá-lo",
     "amount": "Montante",
     "reason": "Motivo",
     "requestHint": "O operador do banco analisa o teu pedido e financia-o a partir da tesouraria se for aprovado. Sem juros nem prazos.",
@@ -214,6 +215,8 @@
       },
       "approve": "Aprovar",
       "suspend": "Suspender",
+      "suspendTitle": "Suspender cliente",
+      "suspendMessage": "Isto desativa a conta do cliente: não poderá enviar dinheiro, pedir empréstimos nem abrir reclamações até o aprovares novamente. O saldo e o histórico são mantidos.",
       "approved": "Cliente aprovado — já pode operar",
       "suspended": "Cliente suspenso",
       "since": "Cliente desde",
@@ -247,5 +250,23 @@
     "action": "Ação",
     "user": "Utilizador",
     "ip": "IP"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "empty": "Ainda não há notificações.",
+    "markAllRead": "Marcar todas como lidas",
+    "unread": "{{ count }} notificações por ler",
+    "open": "Abrir notificações",
+    "types": {
+      "TransferReceived": "{{ actor }} enviou-te {{ amount }}",
+      "LoanApproved": "O teu empréstimo de {{ amount }} foi aprovado e financiado",
+      "LoanRejected": "O teu empréstimo de {{ amount }} foi rejeitado",
+      "LoanRepaid": "{{ actor }} devolveu {{ amount }}",
+      "ClaimProposed": "Foi proposta uma transferência corretiva de {{ amount }} para uma reclamação",
+      "ClaimCounterpartyConsented": "{{ actor }} consentiu a transferência corretiva de {{ amount }}",
+      "ClaimResolved": "Uma reclamação foi resolvida com uma transferência corretiva de {{ amount }}",
+      "ClientApproved": "A tua conta de cliente foi aprovada — já podes operar",
+      "ClientSuspended": "O operador do banco suspendeu a tua conta de cliente"
+    }
   }
 }

@@ -32,7 +32,8 @@
 
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>{{ 'claims.reason' | translate }}</mat-label>
-                    <textarea matInput rows="2" formControlName="reason" required></textarea>
+                    <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="3"
+                        formControlName="reason" required></textarea>
                     @if (openForm.controls.reason.hasError('required')) {
                     <mat-error>{{ 'common.required' | translate }}</mat-error>
                     }

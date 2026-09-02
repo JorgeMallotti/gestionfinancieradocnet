@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,6 +27,7 @@ import { extractError } from '../../shared/utils/errors';
   selector: 'app-transfer-dialog',
   imports: [
     ReactiveFormsModule,
+    CdkTextareaAutosize,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
@@ -37,6 +39,7 @@ import { extractError } from '../../shared/utils/errors';
     TranslatePipe,
   ],
   templateUrl: './transfer-dialog.component.html',
+  styleUrl: './transfer-dialog.component.scss',
 })
 export class TransferDialog {
   private readonly accounts = inject(AccountsService);

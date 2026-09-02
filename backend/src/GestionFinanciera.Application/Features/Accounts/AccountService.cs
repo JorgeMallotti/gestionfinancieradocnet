@@ -2,6 +2,7 @@ using GestionFinanciera.Application.Common.Audit;
 using GestionFinanciera.Application.Common.Results;
 using GestionFinanciera.Application.Features.Accounts.DTOs;
 using GestionFinanciera.Application.Features.Accounts.Interfaces;
+using GestionFinanciera.Application.Features.Notifications.Interfaces;
 using GestionFinanciera.Domain.Entities;
 using GestionFinanciera.Domain.Enums;
 
@@ -13,7 +14,8 @@ namespace GestionFinanciera.Application.Features.Accounts;
 /// </summary>
 public sealed class AccountService(
     IAccountRepository repository,
-    IAuditService audit) : IAccountService
+    IAuditService audit,
+    INotificationService notifications) : IAccountService
 {
     public async Task<Result<AccountDto>> GetMyAccountAsync(
         Guid companyId, Guid userId, CancellationToken ct)
@@ -74,6 +76,11 @@ public sealed class AccountService(
             companyId, adminUserId, AuditAction.Update, nameof(ClientAccount), account.Id,
             beforeJson, AuditJson.Serialize(account.ToAuditSnapshot()), ipAddress, ct);
 
+        // Bell: the client is told they can finally operate.
+        await notifications.NotifyAsync(
+            companyId, account.OwnerUserId, NotificationType.ClientApproved,
+            account.Id, null, null, ct);
+
         return Result<AccountDto>.Success(AccountDto.FromEntity(account));
     }
 
@@ -99,6 +106,11 @@ public sealed class AccountService(
         await audit.RecordAsync(
             companyId, adminUserId, AuditAction.Update, nameof(ClientAccount), account.Id,
             beforeJson, AuditJson.Serialize(account.ToAuditSnapshot()), ipAddress, ct);
+
+        // Bell: the client is told their account was suspended.
+        await notifications.NotifyAsync(
+            companyId, account.OwnerUserId, NotificationType.ClientSuspended,
+            account.Id, null, null, ct);
 
         return Result<AccountDto>.Success(AccountDto.FromEntity(account));
     }

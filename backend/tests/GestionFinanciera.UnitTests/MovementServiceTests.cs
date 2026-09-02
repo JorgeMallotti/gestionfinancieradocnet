@@ -22,9 +22,10 @@ public sealed class MovementServiceTests
     private readonly InMemoryMovementRepository _movements = new();
     private readonly InMemoryCategoryRepository _categories = new();
     private readonly FakeAuditService _audit = new();
+    private readonly FakeNotificationService _notifications = new();
 
     private MovementService CreateService() => new(
-        _movements, _accounts, _categories, _audit, new TransferValidator());
+        _movements, _accounts, _categories, _audit, _notifications, new TransferValidator());
 
     private (Guid Payer, Guid Payee) SeedAccounts(decimal payerBalance, decimal payeeBalance)
     {

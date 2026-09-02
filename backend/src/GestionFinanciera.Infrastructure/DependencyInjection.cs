@@ -14,6 +14,8 @@ using GestionFinanciera.Application.Features.Loans;
 using GestionFinanciera.Application.Features.Loans.Interfaces;
 using GestionFinanciera.Application.Features.Movements;
 using GestionFinanciera.Application.Features.Movements.Interfaces;
+using GestionFinanciera.Application.Features.Notifications;
+using GestionFinanciera.Application.Features.Notifications.Interfaces;
 using GestionFinanciera.Application.Features.Reports;
 using GestionFinanciera.Application.Features.Reports.Interfaces;
 using GestionFinanciera.Infrastructure.Identity;
@@ -85,6 +87,7 @@ public static class DependencyInjection
         services.AddScoped<IMovementService, MovementService>();
         services.AddScoped<ILoanService, LoanService>();
         services.AddScoped<IClaimService, ClaimService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IReportService, ReportService>();
@@ -98,6 +101,7 @@ public static class DependencyInjection
         services.AddScoped<IMovementRepository, MovementRepository>();
         services.AddScoped<ILoanRepository, LoanRepository>();
         services.AddScoped<IClaimRepository, ClaimRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
 
         return services;

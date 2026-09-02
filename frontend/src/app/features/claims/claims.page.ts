@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -28,6 +29,7 @@ import { extractError } from '../../shared/utils/errors';
   selector: 'app-claims-page',
   imports: [
     ReactiveFormsModule,
+    CdkTextareaAutosize,
     MatCardModule,
     MatButtonModule,
     MatIconModule,

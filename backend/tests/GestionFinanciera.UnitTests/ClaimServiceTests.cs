@@ -24,9 +24,10 @@ public sealed class ClaimServiceTests
     private readonly InMemoryMovementRepository _movements = new();
     private readonly InMemoryAccountRepository _accounts = new();
     private readonly FakeAuditService _audit = new();
+    private readonly FakeNotificationService _notifications = new();
 
     private ClaimService CreateService() => new(
-        _claims, _movements, _accounts, _audit,
+        _claims, _movements, _accounts, _audit, _notifications,
         new OpenClaimValidator(), new ProposeCorrectionValidator());
 
     private (Guid Ana, Guid Xyz, Guid DisputedMovement) SeedDisputedTransfer()

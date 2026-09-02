@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -13,6 +14,7 @@ import { AccountsService } from '../../core/services/accounts.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { Account, AccountStatus } from '../../core/models';
 import { extractError } from '../../shared/utils/errors';
+import { ConfirmDialog, ConfirmDialogData } from '../../shared/components/confirm-dialog.component';
 
 /**
  * Bank Admin panel: manage client accounts. Pending registrations are approved
@@ -29,6 +31,7 @@ import { extractError } from '../../shared/utils/errors';
     MatFormFieldModule,
     MatSelectModule,
     MatProgressBarModule,
+    MatDialogModule,
     TranslatePipe,
     DecimalPipe,
     DatePipe,
@@ -40,6 +43,7 @@ export class AdminClientsPage {
   private readonly accounts = inject(AccountsService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly loading = signal(true);
   protected readonly items = signal<Account[]>([]);
@@ -92,7 +96,23 @@ export class AdminClientsPage {
     }
   }
 
-  protected async suspend(client: Account): Promise<void> {
+  /** Suspending a client is a serious action — require an explicit double check. */
+  confirmSuspend(client: Account): void {
+    const data: ConfirmDialogData = {
+      titleKey: 'admin.clients.suspendTitle',
+      messageKey: 'admin.clients.suspendMessage',
+      confirmKey: 'admin.clients.suspend',
+    };
+
+    const ref = this.dialog.open(ConfirmDialog, { width: '420px', data });
+
+    ref.afterClosed().subscribe(async (confirmed: boolean) => {
+      if (!confirmed) return;
+      await this.suspend(client);
+    });
+  }
+
+  private async suspend(client: Account): Promise<void> {
     this.busy.set(client.id);
     try {
       const updated = await this.accounts.suspendClient(client.id);

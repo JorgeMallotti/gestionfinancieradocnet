@@ -6,6 +6,7 @@ using GestionFinanciera.Application.Features.Accounts.Interfaces;
 using GestionFinanciera.Application.Features.Loans.DTOs;
 using GestionFinanciera.Application.Features.Loans.Interfaces;
 using GestionFinanciera.Application.Features.Movements.Interfaces;
+using GestionFinanciera.Application.Features.Notifications.Interfaces;
 using GestionFinanciera.Domain.Entities;
 using GestionFinanciera.Domain.Enums;
 
@@ -25,6 +26,7 @@ public sealed class LoanService(
     IAccountRepository accounts,
     IMovementRepository movements,
     IAuditService audit,
+    INotificationService notifications,
     IValidator<RequestLoanDto> requestValidator,
     IValidator<DecideLoanDto> decideValidator,
     IValidator<RepayLoanDto> repayValidator) : ILoanService
@@ -113,6 +115,16 @@ public sealed class LoanService(
                 companyId, adminUserId, AuditAction.Update, nameof(Loan), loan.Id,
                 beforeJson, AuditJson.Serialize(loan.ToAuditSnapshot()), ipAddress: null, ct);
 
+            // Bell: tell the client their request was rejected. The owner user
+            // is resolved through the repository — never via a lazy navigation.
+            var loanOwner = await accounts.GetByIdAsync(loan.ClientAccountId, companyId, ct);
+            if (loanOwner is not null)
+            {
+                await notifications.NotifyAsync(
+                    companyId, loanOwner.OwnerUserId, NotificationType.LoanRejected,
+                    loan.Id, null, loan.Amount, ct);
+            }
+
             return Result<LoanDto>.Success(LoanDto.FromEntity(loan));
         }
 
@@ -154,6 +166,15 @@ public sealed class LoanService(
         await audit.RecordAsync(
             companyId, adminUserId, AuditAction.Update, nameof(Loan), loan.Id,
             beforeJson, AuditJson.Serialize(loan.ToAuditSnapshot()), ipAddress: null, ct);
+
+        // Bell: tell the client their loan was approved and funded.
+        var approvedLoanOwner = await accounts.GetByIdAsync(loan.ClientAccountId, companyId, ct);
+        if (approvedLoanOwner is not null)
+        {
+            await notifications.NotifyAsync(
+                companyId, approvedLoanOwner.OwnerUserId, NotificationType.LoanApproved,
+                loan.Id, null, loan.Amount, ct);
+        }
 
         return Result<LoanDto>.Success(LoanDto.FromEntity(loan));
     }
@@ -223,6 +244,11 @@ public sealed class LoanService(
         await audit.RecordAsync(
             companyId, clientUserId, AuditAction.Update, nameof(Loan), loan.Id,
             beforeJson, AuditJson.Serialize(loan.ToAuditSnapshot()), ipAddress: null, ct);
+
+        // Bell: the bank learns a client repaid (full or partial).
+        await notifications.NotifyAsync(
+            companyId, treasury.OwnerUserId, NotificationType.LoanRepaid,
+            loan.Id, client.DisplayName, dto.Amount, ct);
 
         return Result<LoanDto>.Success(LoanDto.FromEntity(loan));
     }

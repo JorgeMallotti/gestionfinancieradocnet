@@ -241,3 +241,27 @@ export interface EmailReportDto {
   from?: string;
   to?: string;
 }
+
+// ── Notifications (the bell) ───────────────────────────────────────────
+
+/** Mirrors NotificationType in the backend (Domain/Enums). */
+export type NotificationType =
+  | 'TransferReceived'
+  | 'LoanApproved'
+  | 'LoanRejected'
+  | 'LoanRepaid'
+  | 'ClaimProposed'
+  | 'ClaimCounterpartyConsented'
+  | 'ClaimResolved'
+  | 'ClientApproved'
+  | 'ClientSuspended';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  relatedId?: string | null;
+  actorName?: string | null;
+  amount?: number | null;
+  isRead: boolean;
+  occurredAt: string;
+}

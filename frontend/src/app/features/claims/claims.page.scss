@@ -15,20 +15,15 @@
 
   .open-card {
     margin-bottom: 16px;
-  }
 
-  .claim-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 12px;
-  }
-
-  .claim-card {
-    mat-card-content {
+    mat-card-content form {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
+    }
+
+    .full-width {
+      width: 100%;
     }
   }
 

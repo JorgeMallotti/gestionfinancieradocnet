@@ -23,9 +23,10 @@ public sealed class LoanServiceTests
     private readonly InMemoryAccountRepository _accounts = new();
     private readonly InMemoryMovementRepository _movements = new();
     private readonly FakeAuditService _audit = new();
+    private readonly FakeNotificationService _notifications = new();
 
     private LoanService CreateService() => new(
-        _loans, _accounts, _movements, _audit,
+        _loans, _accounts, _movements, _audit, _notifications,
         new RequestLoanValidator(), new DecideLoanValidator(), new RepayLoanValidator());
 
     private (Guid Treasury, Guid Client) SeedAccounts(decimal treasuryBalance = 100_000m, decimal clientBalance = 1000m)

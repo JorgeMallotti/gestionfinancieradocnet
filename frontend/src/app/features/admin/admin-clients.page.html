@@ -57,7 +57,7 @@
                         </button>
                         }
                         @if (client.status === 'Active') {
-                        <button mat-stroked-button [disabled]="busy() === client.id" (click)="suspend(client)">
+                        <button mat-stroked-button [disabled]="busy() === client.id" (click)="confirmSuspend(client)">
                             <mat-icon>block</mat-icon>
                             {{ 'admin.clients.suspend' | translate }}
                         </button>

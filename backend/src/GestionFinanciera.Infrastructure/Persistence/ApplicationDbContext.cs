@@ -33,6 +33,8 @@ public sealed class ApplicationDbContext(
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -65,5 +67,8 @@ public sealed class ApplicationDbContext(
 
         builder.Entity<AuditLog>()
             .HasQueryFilter(a => _currentTenant.CompanyId == null || a.CompanyId == _currentTenant.CompanyId);
+
+        builder.Entity<Notification>()
+            .HasQueryFilter(n => _currentTenant.CompanyId == null || n.CompanyId == _currentTenant.CompanyId);
     }
 }

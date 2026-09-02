@@ -7,6 +7,7 @@ using GestionFinanciera.Application.Features.Accounts.Interfaces;
 using GestionFinanciera.Application.Features.Categories.Interfaces;
 using GestionFinanciera.Application.Features.Movements.DTOs;
 using GestionFinanciera.Application.Features.Movements.Interfaces;
+using GestionFinanciera.Application.Features.Notifications.Interfaces;
 using GestionFinanciera.Domain.Entities;
 using GestionFinanciera.Domain.Enums;
 
@@ -25,6 +26,7 @@ public sealed class MovementService(
     IAccountRepository accounts,
     ICategoryRepository categories,
     IAuditService audit,
+    INotificationService notifications,
     IValidator<TransferDto> transferValidator) : IMovementService
 {
     public async Task<Result<MovementDto>> TransferAsync(
@@ -83,6 +85,11 @@ public sealed class MovementService(
             companyId, fromUserId, AuditAction.Create, nameof(Movement), movement.Id,
             beforeJson: null, afterJson: AuditJson.Serialize(movement.ToAuditSnapshot()),
             ipAddress: null, ct);
+
+        // Bell: the receiver learns who sent them money.
+        await notifications.NotifyAsync(
+            companyId, payee.OwnerUserId, NotificationType.TransferReceived,
+            movement.Id, payer.DisplayName, dto.Amount, ct);
 
         return Result<MovementDto>.Success(MovementDto.FromEntity(movement));
     }
