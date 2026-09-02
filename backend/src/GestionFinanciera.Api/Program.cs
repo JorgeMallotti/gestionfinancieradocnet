@@ -5,6 +5,7 @@ using System.Threading.RateLimiting;
 
 using FluentValidation;
 
+using GestionFinanciera.Api.Extensions;
 using GestionFinanciera.Api.Middleware;
 using GestionFinanciera.Application.Features.Auth.DTOs;
 using GestionFinanciera.Infrastructure;
@@ -131,10 +132,13 @@ try
                 .AllowCredentials()); // required for the refresh cookie
     });
 
-    // ── Rate limiting: public endpoints (login/register/refresh) ──
+    // ── Rate limiting ────────────────────────────────────────────────────
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // "auth": public endpoints (login/register/demo-login/refresh).
+        // Keyed by IP — anonymous callers have no identity to partition on.
         options.AddPolicy("auth", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -144,6 +148,27 @@ try
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0,
                 }));
+
+        // "reports": authenticated but CPU/IO-heavy operations (PDF/Excel
+        // generation, report-by-email). Partitioned by the USER (their JWT),
+        // not the IP — a shared NAT/office IP must not lock a whole team out,
+        // and a single abuser cannot be hidden behind rotating IPs.
+        options.AddPolicy("reports", httpContext =>
+        {
+            Guid userId = httpContext.User.GetUserId();
+            string partitionKey = userId != Guid.Empty
+                ? $"user:{userId}"
+                : $"ip:{httpContext.Connection.RemoteIpAddress}";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                });
+        });
     });
 
     // ── Request body size limit (1 MB) ──

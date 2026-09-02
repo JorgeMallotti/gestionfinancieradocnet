@@ -69,6 +69,7 @@
     "errorPasswordMismatch": "Las contraseñas no coinciden.",
     "pendingTitle": "Solicitud recibida",
     "pendingSubtitle": "Tu cuenta está pendiente de aprobación",
+    "ephemeralNotice": "Entorno demo: las cuentas creadas aquí se eliminan automáticamente en 24 horas (con el reset diario de la demo). Las cuentas demo (Admin, Ana, XYZ Solutions) siempre están disponibles.",
     "pendingStep1": "Tu cuenta se creó con estado Pendiente. El operador del banco debe aprobarla antes de que puedas enviar dinero, pedir préstamos o abrir reclamaciones.",
     "pendingStep2": "El operador aprueba clientes nuevos desde la página Clientes (rol Administrador).",
     "pendingTip": "Demo: entra como Administrador (botón demo) y aprueba el nuevo cliente desde la sección Clientes.",

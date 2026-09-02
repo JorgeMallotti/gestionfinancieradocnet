@@ -24,6 +24,29 @@
   height: 44px;
 }
 
+/* Notice about the ephemeral demo environment (register + pending pages). */
+.auth-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-tertiary) 30%, transparent);
+
+  mat-icon {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--mat-sys-tertiary);
+  }
+}
+
 /* One-click demo quick access (login page only). */
 .demo-access {
   margin-top: 16px;

@@ -69,6 +69,7 @@
     "errorPasswordMismatch": "Passwords do not match.",
     "pendingTitle": "Request received",
     "pendingSubtitle": "Your account is waiting for approval",
+    "ephemeralNotice": "Demo environment: accounts created here are removed automatically within 24 hours (with the daily demo reset). The demo accounts (Admin, Ana, XYZ Solutions) are always available for quick access.",
     "pendingStep1": "Your account was created with status Pending. The bank operator must approve it before you can send money, request loans or open claims.",
     "pendingStep2": "The bank operator approves new clients from the Clients page (Administrator role).",
     "pendingTip": "Demo tip: log in as Administrator (one-click demo button) and approve the new client from the Clients section.",
