@@ -1,0 +1,42 @@
+<div class="notif-root">
+    <!-- Bell button + unread badge -->
+    <button mat-icon-button class="bell-button" (click)="togglePanel()" [matBadge]="badgeLabel()"
+        [matBadgeHidden]="!hasUnread()" matBadgeColor="warn" [attr.aria-expanded]="open()" aria-haspopup="true"
+        [matTooltip]="'notifications.title' | translate" [attr.aria-label]="'notifications.title' | translate">
+        <mat-icon>notifications</mat-icon>
+    </button>
+
+    @if (open()) {
+    <section class="panel" role="list" [attr.aria-label]="'notifications.title' | translate">
+        <!-- Header: title + mark all read -->
+        <header class="panel-header">
+            <span class="panel-title">{{ 'notifications.title' | translate }}</span>
+            @if (hasUnread()) {
+            <button mat-button class="mark-all" (click)="markAllRead()">
+                {{ 'notifications.markAllRead' | translate }}
+            </button>
+            }
+        </header>
+
+        <div class="panel-body">
+            @for (row of rows(); track row.id) {
+            <button type="button" class="row" role="listitem" [class.unread]="!row.isRead" (click)="select(row)">
+                <mat-icon class="row-icon" aria-hidden="true">{{ row.icon }}</mat-icon>
+                <span class="row-text">
+                    <span class="row-message">{{ row.message }}</span>
+                    <span class="row-time">{{ row.occurredAt | date: 'dd MMM yyyy HH:mm' }}</span>
+                </span>
+                @if (!row.isRead) {
+                <span class="dot" aria-hidden="true"></span>
+                }
+            </button>
+            } @empty {
+            <div class="empty">
+                <mat-icon class="empty-icon" aria-hidden="true">notifications_none</mat-icon>
+                <span>{{ 'notifications.empty' | translate }}</span>
+            </div>
+            }
+        </div>
+    </section>
+    }
+</div>

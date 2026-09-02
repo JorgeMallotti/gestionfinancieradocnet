@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>{{ 'movements.detailTitle' | translate }}</h2>
+
+<mat-dialog-content>
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.type' | translate }}</span>
+        <span class="detail-value">{{ typeLabelKey(movement.type) | translate }}</span>
+    </div>
+
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.description' | translate }}</span>
+        <span class="detail-value">{{ movement.description || '—' }}</span>
+    </div>
+
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.from' | translate }}</span>
+        <span class="detail-value">{{ movement.fromDisplayName }}</span>
+    </div>
+
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.to' | translate }}</span>
+        <span class="detail-value">{{ movement.toDisplayName }}</span>
+    </div>
+
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.date' | translate }}</span>
+        <span class="detail-value">{{ movement.occurredAt | date: 'dd MMM yyyy HH:mm' }}</span>
+    </div>
+
+    @if (movement.categoryName) {
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.category' | translate }}</span>
+        <span class="detail-value">{{ movement.categoryName }}</span>
+    </div>
+    }
+
+    @if (movement.correctsMovementId) {
+    <div class="detail-row">
+        <span class="detail-label">{{ 'movements.correctionOf' | translate }}</span>
+        <span class="detail-value">{{ movement.correctsMovementId }}</span>
+    </div>
+    }
+
+    <div class="amount-line">
+        <mat-icon>payments</mat-icon>
+        {{ movement.amount | number: '1.2-2' }} {{ movement.currency }}
+    </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>{{ 'common.close' | translate }}</button>
+</mat-dialog-actions>

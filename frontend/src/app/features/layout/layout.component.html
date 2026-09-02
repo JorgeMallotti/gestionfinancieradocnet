@@ -1,0 +1,87 @@
+<mat-sidenav-container class="shell">
+    <mat-sidenav #sidenav [mode]="mode()" [opened]="mode() === 'side'" class="sidenav">
+        <mat-toolbar class="brand">
+            <span>{{ 'app.name' | translate }}</span>
+        </mat-toolbar>
+
+        <mat-nav-list>
+            @for (item of visibleItems(); track item.route) {
+            <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link"
+                [routerLinkActiveOptions]="{ exact: false }" (click)="mode() === 'over' && sidenav.close()">
+                <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+                <span matListItemTitle>{{ item.labelKey | translate }}</span>
+            </a>
+            }
+
+            <mat-divider class="nav-separator"></mat-divider>
+
+            <!-- Jorge's landing page (landing ↔ MVP navigation) -->
+            <a mat-list-item [href]="landingUrl" target="_blank" rel="noopener noreferrer"
+                (click)="openLandingAndClose($event, sidenav)">
+                <mat-icon matListItemIcon>public</mat-icon>
+                <span matListItemTitle>{{ 'nav.website' | translate }}</span>
+            </a>
+        </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+        <mat-toolbar class="topbar">
+            <button mat-icon-button (click)="sidenav.toggle()" [matTooltip]="'common.menu' | translate"
+                [attr.aria-label]="'common.menu' | translate">
+                <mat-icon>menu</mat-icon>
+            </button>
+
+            <span class="spacer"></span>
+
+            <!-- Jorge's landing page (landing ↔ MVP navigation) -->
+            <a mat-icon-button [href]="landingUrl" target="_blank" rel="noopener noreferrer"
+                [matTooltip]="'nav.website' | translate" [attr.aria-label]="'nav.website' | translate">
+                <mat-icon>public</mat-icon>
+            </a>
+
+            <!-- Theme toggle -->
+            <button mat-icon-button (click)="toggleTheme()"
+                [matTooltip]="isDark() ? ('common.themeLight' | translate) : ('common.themeDark' | translate)"
+                [attr.aria-label]="isDark() ? ('common.themeLight' | translate) : ('common.themeDark' | translate)">
+                <mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            </button>
+
+            <!-- Language selector -->
+            <mat-form-field class="lang-select" appearance="outline">
+                <mat-select [value]="currentLang()" (selectionChange)="setLanguage($event.value)"
+                    [attr.aria-label]="'common.language' | translate">
+                    @for (lang of languages; track lang.code) {
+                    <mat-option [value]="lang.code">{{ lang.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <!-- Notifications bell (badge + dropdown) -->
+            <app-notification-bell></app-notification-bell>
+
+            <!-- User menu -->
+            <button mat-icon-button [matMenuTriggerFor]="userMenu" [attr.aria-label]="'common.userMenu' | translate">
+                <mat-icon>account_circle</mat-icon>
+            </button>
+            <mat-menu #userMenu="matMenu">
+                <button mat-menu-item disabled>
+                    <mat-icon>person</mat-icon>
+                    {{ auth.user()?.fullName }}
+                </button>
+                <button mat-menu-item disabled>
+                    <mat-icon>business</mat-icon>
+                    {{ auth.user()?.companyName }}
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="logout()">
+                    <mat-icon>logout</mat-icon>
+                    {{ 'common.logout' | translate }}
+                </button>
+            </mat-menu>
+        </mat-toolbar>
+
+        <main class="content">
+            <router-outlet />
+        </main>
+    </mat-sidenav-content>
+</mat-sidenav-container>

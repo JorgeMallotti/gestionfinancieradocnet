@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>{{ 'transfers.send' | translate }}</h2>
+
+<mat-dialog-content>
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <form [formGroup]="form" class="transfer-form">
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'transfers.to' | translate }}</mat-label>
+            <mat-select formControlName="toAccountId">
+                @for (counterparty of counterparties(); track counterparty.id) {
+                <mat-option [value]="counterparty.id">
+                    {{ counterparty.isTreasury ? ('transfers.bankTreasuryPrefix' | translate) : ''
+                    }}{{ counterparty.displayName }}
+                </mat-option>
+                }
+            </mat-select>
+            @if (form.controls.toAccountId.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+        </mat-form-field>
+
+        <div class="row-fields">
+            <mat-form-field appearance="outline" class="amount-field">
+                <mat-label>{{ 'transfers.amount' | translate }}</mat-label>
+                <input matInput type="number" min="0.01" step="0.01" formControlName="amount" required />
+                @if (form.controls.amount.hasError('required')) {
+                <mat-error>{{ 'common.required' | translate }}</mat-error>
+                }
+                @if (form.controls.amount.hasError('min')) {
+                <mat-error>{{ 'transfers.errorAmountMin' | translate }}</mat-error>
+                }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="category-field">
+                <mat-label>{{ 'transfers.categoryOptional' | translate }}</mat-label>
+                <mat-select formControlName="categoryId">
+                    <mat-option [value]="null">{{ 'common.none' | translate }}</mat-option>
+                    @for (category of categories(); track category.id) {
+                    <mat-option [value]="category.id">{{ category.name }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'transfers.description' | translate }}</mat-label>
+            <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="4"
+                formControlName="description"></textarea>
+        </mat-form-field>
+    </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>{{ 'common.cancel' | translate }}</button>
+    <button mat-raised-button color="primary" [disabled]="form.invalid || sending()" (click)="send()">
+        @if (sending()) {
+        <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+        <mat-icon>send</mat-icon>
+        }
+        {{ 'transfers.confirm' | translate }}
+    </button>
+</mat-dialog-actions>

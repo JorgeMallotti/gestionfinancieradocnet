@@ -1,0 +1,137 @@
+.claims {
+  .page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+  }
+
+  .open-card {
+    margin-bottom: 16px;
+
+    mat-card-content form {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+  }
+
+  .claim-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    .claim-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .claim-reason,
+  .claim-claimant {
+    margin: 0;
+  }
+
+  .claim-claimant {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  .proposal {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--mat-sys-surface-variant);
+    font-size: 0.9rem;
+
+    p {
+      margin: 4px 0;
+    }
+
+    .resolution-note {
+      opacity: 0.75;
+      font-style: italic;
+    }
+  }
+
+  .admin-bar {
+    margin-top: 8px;
+  }
+
+  .propose-form {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--mat-sys-outline-variant);
+
+    .note-full {
+      grid-column: 1 / -1;
+    }
+
+    .propose-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+  }
+
+  .consent-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+
+    .consented {
+      margin: 0;
+      color: var(--sem-success, #2e7d32);
+    }
+  }
+
+  mat-chip.resolved {
+    background: color-mix(in srgb, var(--sem-success, #2e7d32) 18%, transparent);
+    color: var(--sem-success, #2e7d32);
+  }
+
+  mat-chip.rejected {
+    background: color-mix(in srgb, var(--sem-error, #c62828) 18%, transparent);
+    color: var(--sem-error, #c62828);
+  }
+
+  mat-chip.under-review {
+    background: color-mix(in srgb, var(--mat-sys-tertiary) 18%, transparent);
+  }
+
+  .empty {
+    text-align: center;
+    opacity: 0.6;
+    padding: 24px 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .claims .propose-form {
+    grid-template-columns: 1fr;
+  }
+}

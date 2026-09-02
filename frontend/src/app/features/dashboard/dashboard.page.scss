@@ -1,0 +1,118 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+
+  .account-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 0;
+    opacity: 0.75;
+    font-size: 0.9rem;
+  }
+
+  .treasury-chip {
+    background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+  }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+
+  // Handset: one column — 2 cramped columns force horizontal scroll
+  // (AGENTS.md §10: mobile-first, no fixed widths).
+  &.handset {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpi-card {
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.kpi-icon {
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
+  opacity: 0.85;
+
+  &.income {
+    color: var(--sem-success);
+  }
+
+  &.expense {
+    color: var(--sem-error);
+  }
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.income {
+    color: var(--sem-success);
+  }
+
+  &.expense {
+    color: var(--sem-error);
+  }
+}
+
+/* Handset: allow long amounts to wrap instead of overflowing */
+@media (max-width: 599px) {
+  .kpi-value {
+    font-size: 1.2rem;
+    white-space: normal;
+  }
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+
+  &.handset {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  mat-card-content {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}

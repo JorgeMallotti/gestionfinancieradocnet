@@ -1,0 +1,273 @@
+﻿{
+  "app": {
+    "name": "Acme Bank"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "movements": "Movements",
+    "loans": "Loans",
+    "claims": "Claims",
+    "categories": "Categories",
+    "reports": "Reports",
+    "adminClients": "Clients",
+    "audit": "Audit log",
+    "website": "Visit website"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "confirm": "Confirm",
+    "actions": "Actions",
+    "close": "Close",
+    "logout": "Log out",
+    "language": "Language",
+    "menu": "Menu",
+    "themeLight": "Switch to light theme",
+    "themeDark": "Switch to dark theme",
+    "togglePassword": "Toggle password visibility",
+    "required": "This field is required",
+    "maxLength": "Value is too long",
+    "refresh": "Refresh",
+    "all": "All",
+    "clear": "Clear",
+    "noData": "No data yet",
+    "noDescription": "No description",
+    "userMenu": "User menu",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Create account",
+    "goLogin": "Go to login",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "accountKind": "Account type",
+    "kindPerson": "Person",
+    "kindCompany": "Company",
+    "displayName": "Display name",
+    "displayNameHint": "Your full name (person) or the company name.",
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to your bank account",
+    "registerTitle": "Open your account",
+    "registerSubtitle": "Register as a client of the bank (person or company)",
+    "openAccount": "Open account",
+    "errorGeneric": "Authentication failed. Please try again.",
+    "errorEmailExists": "An account with this email already exists.",
+    "errorInvalidCredentials": "Invalid email or password.",
+    "errorEmailInvalid": "Enter a valid email address.",
+    "errorPasswordMin": "Password must be at least 8 characters.",
+    "errorPasswordMismatch": "Passwords do not match.",
+    "pendingTitle": "Request received",
+    "pendingSubtitle": "Your account is waiting for approval",
+    "pendingStep1": "Your account was created with status Pending. The bank operator must approve it before you can send money, request loans or open claims.",
+    "pendingStep2": "The bank operator approves new clients from the Clients page (Administrator role).",
+    "pendingTip": "Demo tip: log in as Administrator (one-click demo button) and approve the new client from the Clients section.",
+    "demoTitle": "Quick demo access",
+    "demoSubtitle": "One click, no registration. Explore the demo bank.",
+    "demo": {
+      "accounts": {
+        "admin": {
+          "label": "Bank operator (Admin)",
+          "description": "Approve clients, decide loans and mediate claims."
+        },
+        "ana": {
+          "label": "Ana (person client)",
+          "description": "Send money, repay loans and open claims."
+        },
+        "xyz": {
+          "label": "XYZ Solutions (company client)",
+          "description": "Send money, repay loans and open claims."
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "incoming": "Money in",
+    "outgoing": "Money out",
+    "balance": "Balance",
+    "movementCount": "Movements",
+    "monthlySeries": "Monthly money in vs out",
+    "noData": "No data to display yet",
+    "treasury": "Bank treasury"
+  },
+  "movements": {
+    "description": "Description",
+    "amount": "Amount",
+    "empty": "No movements yet. Send money to another client to see it here.",
+    "detailTitle": "Movement details",
+    "type": "Type",
+    "from": "From",
+    "to": "To",
+    "date": "Date",
+    "category": "Category",
+    "correctionOf": "Correction of movement",
+    "types": {
+      "Transfer": "Transfer",
+      "LoanDisbursement": "Loan disbursement",
+      "LoanRepayment": "Loan repayment",
+      "CorrectiveTransfer": "Corrective transfer",
+      "InitialBalance": "Opening balance"
+    }
+  },
+  "transfers": {
+    "send": "Send money",
+    "to": "Receiver",
+    "amount": "Amount",
+    "categoryOptional": "Category (optional)",
+    "description": "Description (optional)",
+    "confirm": "Send",
+    "errorAmountMin": "Amount must be greater than zero.",
+    "sent": "Money sent",
+    "bankTreasuryPrefix": "🏦 "
+  },
+  "categories": {
+    "title": "Categories",
+    "create": "New category",
+    "name": "Name",
+    "description": "Description",
+    "createTitle": "New category",
+    "editTitle": "Edit category",
+    "detailsTitle": "Category details",
+    "catalogHint": "Bank-managed catalog. Clients can tag their movements with these categories (optional).",
+    "deleteImplications": "Deleting a category is permanent. Categories already used as tags stay attached to their movements but can no longer be selected for new ones.",
+    "understandCheck": "I understand the consequences",
+    "created": "Category created",
+    "updated": "Category updated",
+    "deleted": "Category deleted"
+  },
+  "loans": {
+    "request": "Request a loan",
+    "requested": "Loan request sent — the operator will review it",
+    "amount": "Amount",
+    "reason": "Reason",
+    "requestHint": "The bank operator reviews your request and funds it from the treasury if approved. No interest, no deadlines.",
+    "empty": "No loans yet.",
+    "status": {
+      "Pending": "Pending",
+      "Approved": "Approved",
+      "Rejected": "Rejected",
+      "Repaid": "Repaid"
+    },
+    "outstanding": "Outstanding",
+    "repaidLabel": "Repaid",
+    "decisionNote": "Operator note",
+    "noteOptional": "Note (optional)",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Loan approved — the treasury transferred the funds",
+    "rejected": "Loan rejected",
+    "repayAmount": "Amount to repay",
+    "repay": "Repay",
+    "repaid": "Payment received",
+    "errorRepayAmount": "Enter a valid amount to repay.",
+    "errorAmountMin": "Amount must be greater than zero."
+  },
+  "claims": {
+    "open": "Open a claim",
+    "movement": "Movement",
+    "reason": "Reason",
+    "openedBy": "Opened by",
+    "empty": "No claims yet.",
+    "status": {
+      "Open": "Open",
+      "UnderReview": "Under review",
+      "Resolved": "Resolved",
+      "Rejected": "Rejected"
+    },
+    "proposal": "Proposed correction",
+    "payerConsent": "Sender consents",
+    "payeeConsent": "Receiver consents",
+    "proposeAction": "Propose correction (mediate)",
+    "confirmProposal": "Send proposal",
+    "amount": "Amount",
+    "from": "Refund from",
+    "to": "Refund to",
+    "consent": "I consent",
+    "refuse": "I refuse",
+    "consented": "Consent recorded",
+    "refused": "You refused the correction",
+    "youConsented": "You already gave your consent",
+    "opened": "Claim opened",
+    "proposed": "Correction proposed — waiting for both parties",
+    "movementPlaceholder": "Pick one of your movements"
+  },
+  "admin": {
+    "clients": {
+      "title": "Clients",
+      "pendingBadge": "{{ count }} pending",
+      "filter": "Status",
+      "status": {
+        "All": "All",
+        "Pending": "Pending",
+        "Active": "Active",
+        "Suspended": "Suspended"
+      },
+      "approve": "Approve",
+      "suspend": "Suspend",
+      "suspendTitle": "Suspend client",
+      "suspendMessage": "This disables the client's account: they will not be able to send money, request loans or open claims until you approve them again. Their balance and history are kept.",
+      "approved": "Client approved — they can now operate",
+      "suspended": "Client suspended",
+      "since": "Client since",
+      "empty": "No clients match this filter."
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "pdf": "PDF",
+    "excel": "Excel",
+    "pdfTitle": "PDF statement",
+    "pdfSubtitle": "Your movements as a PDF document",
+    "downloadPdf": "Download PDF",
+    "excelTitle": "Excel export",
+    "excelSubtitle": "Your movements as an Excel workbook",
+    "downloadExcel": "Download Excel",
+    "emailTitle": "Send by email",
+    "emailSubtitle": "Send the PDF statement to an email address",
+    "emailTo": "Recipient email",
+    "fromDate": "From date",
+    "toDate": "To date",
+    "sendEmail": "Send",
+    "emailSent": "Report email sent",
+    "smtpNotConfigured": "SMTP is not configured yet. Please check the server settings."
+  },
+  "audit": {
+    "title": "Audit log",
+    "adminOnly": "Visible to administrators only",
+    "timestamp": "Timestamp",
+    "entity": "Entity",
+    "action": "Action",
+    "user": "User",
+    "ip": "IP address"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "markAllRead": "Mark all as read",
+    "unread": "{{ count }} unread notifications",
+    "open": "Open notifications",
+    "types": {
+      "TransferReceived": "{{ actor }} sent you {{ amount }}",
+      "LoanApproved": "Your loan of {{ amount }} was approved and funded",
+      "LoanRejected": "Your loan of {{ amount }} was rejected",
+      "LoanRepaid": "{{ actor }} repaid {{ amount }}",
+      "LoanRequested": "{{ actor }} requested a loan of {{ amount }}",
+      "ClaimProposed": "A corrective transfer of {{ amount }} was proposed for a claim",
+      "ClaimCounterpartyConsented": "{{ actor }} consented to the corrective transfer of {{ amount }}",
+      "ClaimResolved": "A claim was resolved with a corrective transfer of {{ amount }}",
+      "ClientApproved": "Your client account was approved — you can now operate",
+      "ClientSuspended": "Your client account was suspended by the bank operator"
+    }
+  }
+}

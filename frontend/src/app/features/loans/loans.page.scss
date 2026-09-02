@@ -1,0 +1,141 @@
+.loans {
+  .page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+  }
+
+  .request-card {
+    margin-bottom: 16px;
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) 2fr;
+      gap: 12px;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      opacity: 0.65;
+      margin: 4px 0 0;
+    }
+  }
+
+  .loan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .loan-card {
+    mat-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+
+  .loan-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .loan-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    .loan-client {
+      font-weight: 600;
+    }
+
+    .loan-amount {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+  }
+
+  .loan-side {
+    text-align: right;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .outstanding strong {
+      font-size: 1rem;
+    }
+  }
+
+  .loan-reason {
+    margin: 4px 0 0;
+    opacity: 0.85;
+  }
+
+  .loan-note {
+    margin: 0;
+    font-size: 0.82rem;
+    opacity: 0.7;
+    font-style: italic;
+  }
+
+  .admin-actions,
+  .repay-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+
+    .note-field {
+      flex: 1 1 220px;
+    }
+
+    .repay-field {
+      flex: 1 1 160px;
+    }
+  }
+
+  .loan-status mat-chip.approved {
+    background: color-mix(in srgb, var(--sem-success, #2e7d32) 18%, transparent);
+    color: var(--sem-success, #2e7d32);
+  }
+
+  .loan-status mat-chip.pending {
+    background: color-mix(in srgb, var(--mat-sys-tertiary) 18%, transparent);
+  }
+
+  .loan-status mat-chip.rejected {
+    background: color-mix(in srgb, var(--sem-error, #c62828) 18%, transparent);
+    color: var(--sem-error, #c62828);
+  }
+
+  .empty {
+    text-align: center;
+    opacity: 0.6;
+    padding: 24px 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .loans .request-card .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .loans .loan-side {
+    text-align: left;
+  }
+}

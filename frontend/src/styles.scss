@@ -1,0 +1,69 @@
+﻿// Angular Material M3 theming — light by default, dark when <html class="dark">.
+// The anti-FOUC inline script in index.html restores the saved mode before
+// Angular boots (no theme flash).
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  // Semantic status colors — WCAG AA (4.5:1 on the light surface).
+  --sem-success: #2e7d32; // green 800
+  --sem-success-bg: rgba(46, 125, 50, 0.15);
+  --sem-error: #c62828; // red 800
+  --sem-error-bg: rgba(198, 40, 40, 0.15);
+  --sem-warning: #e65100; // orange 900
+  --sem-warning-bg: rgba(230, 81, 0, 0.15);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+        theme-type: dark,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  // 200-300 shades — WCAG AA on the dark surface.
+  --sem-success: #81c784; // green 300
+  --sem-success-bg: rgba(129, 199, 132, 0.18);
+  --sem-error: #ef9a9a; // red 200
+  --sem-error-bg: rgba(239, 154, 154, 0.18);
+  --sem-warning: #ffb74d; // orange 300
+  --sem-warning-bg: rgba(255, 183, 77, 0.18);
+}
+
+body {
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  height: 100%;
+}
+
+// Toast feedback colors
+.snack-success {
+  --mdc-snackbar-container-color: #2e7d32;
+}
+
+.snack-error {
+  --mdc-snackbar-container-color: #c62828;
+}
