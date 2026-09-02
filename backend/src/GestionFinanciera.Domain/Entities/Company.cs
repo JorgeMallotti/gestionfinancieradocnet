@@ -1,7 +1,9 @@
 namespace GestionFinanciera.Domain.Entities;
 
 /// <summary>
-/// A tenant — every business record in the system belongs to exactly one company.
+/// A tenant. In the bank demo model the single seeded Company IS the bank
+/// (one row in the MVP); every account/movement belongs to it via CompanyId
+/// so the schema is ready for multiple banks later without migrations.
 /// </summary>
 public sealed class Company : BaseEntity
 {
@@ -9,5 +11,7 @@ public sealed class Company : BaseEntity
 
     public ICollection<Category> Categories { get; set; } = [];
 
-    public ICollection<Transaction> Transactions { get; set; } = [];
+    public ICollection<ClientAccount> ClientAccounts { get; set; } = [];
+
+    public ICollection<Movement> Movements { get; set; } = [];
 }

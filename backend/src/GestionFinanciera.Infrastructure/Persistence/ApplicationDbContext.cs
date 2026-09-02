@@ -23,9 +23,17 @@ public sealed class ApplicationDbContext(
 
     public DbSet<Category> Categories => Set<Category>();
 
-    public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<ClientAccount> ClientAccounts => Set<ClientAccount>();
+
+    public DbSet<Movement> Movements => Set<Movement>();
+
+    public DbSet<Loan> Loans => Set<Loan>();
+
+    public DbSet<Claim> Claims => Set<Claim>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
@@ -36,7 +44,7 @@ public sealed class ApplicationDbContext(
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         // ── Multi-tenancy: global query filters ─────────────────────────────
-        // Automatic isolation — a query can never leak another company's rows.
+        // Automatic isolation — a query can never leak another bank's rows.
         //
         // IMPORTANT: the filter MUST reference the tenant provider instance
         // (evaluated per DbContext, i.e. per request), NOT a captured local
@@ -45,10 +53,22 @@ public sealed class ApplicationDbContext(
         builder.Entity<Category>()
             .HasQueryFilter(c => _currentTenant.CompanyId == null || c.CompanyId == _currentTenant.CompanyId);
 
-        builder.Entity<Transaction>()
-            .HasQueryFilter(t => _currentTenant.CompanyId == null || t.CompanyId == _currentTenant.CompanyId);
+        builder.Entity<ClientAccount>()
+            .HasQueryFilter(a => _currentTenant.CompanyId == null || a.CompanyId == _currentTenant.CompanyId);
+
+        builder.Entity<Movement>()
+            .HasQueryFilter(m => _currentTenant.CompanyId == null || m.CompanyId == _currentTenant.CompanyId);
+
+        builder.Entity<Loan>()
+            .HasQueryFilter(l => _currentTenant.CompanyId == null || l.CompanyId == _currentTenant.CompanyId);
+
+        builder.Entity<Claim>()
+            .HasQueryFilter(c => _currentTenant.CompanyId == null || c.CompanyId == _currentTenant.CompanyId);
 
         builder.Entity<AuditLog>()
             .HasQueryFilter(a => _currentTenant.CompanyId == null || a.CompanyId == _currentTenant.CompanyId);
+
+        builder.Entity<Notification>()
+            .HasQueryFilter(n => _currentTenant.CompanyId == null || n.CompanyId == _currentTenant.CompanyId);
     }
 }

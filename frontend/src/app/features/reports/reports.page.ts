@@ -42,7 +42,7 @@ export class ReportsPage {
   private readonly translate = inject(TranslateService);
 
   protected readonly downloading = signal<string | null>(null);
-  protected readonly canSendEmail = this.auth.canMutate;
+  protected readonly canSendEmail = this.auth.isAdmin;
 
   protected readonly emailForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),

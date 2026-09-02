@@ -15,11 +15,15 @@ export interface AuthResponse {
   companyName: string;
 }
 
-export type UserRole = 'Admin' | 'Finance' | 'User';
+/** Bank demo model: Admin = bank operator/mediator, User = client. */
+export type UserRole = 'Admin' | 'User';
 
+export type ClientKind = 'Person' | 'Company';
+
+/** Opens a CLIENT account under the single bank (Pending until Admin approves). */
 export interface RegisterDto {
-  companyName: string;
-  fullName: string;
+  displayName: string;
+  kind: ClientKind;
   email: string;
   password: string;
 }
@@ -27,6 +31,14 @@ export interface RegisterDto {
 export interface LoginDto {
   email: string;
   password: string;
+}
+
+/** Public demo account metadata for the one-click quick access (no credentials). */
+export interface DemoAccount {
+  key: string;
+  role: UserRole;
+  companyName: string;
+  description: string;
 }
 
 // ── Pagination ──────────────────────────────────────────────────────────
@@ -46,13 +58,71 @@ export interface PaginationQuery {
   pageSize?: number;
 }
 
-// ── Categories ──────────────────────────────────────────────────────────
+// ── Accounts ────────────────────────────────────────────────────────────
+
+export type AccountStatus = 'Pending' | 'Active' | 'Suspended';
+
+export interface Account {
+  id: string;
+  ownerUserId: string;
+  displayName: string;
+  kind: ClientKind;
+  status: AccountStatus;
+  balance: number;
+  currency: string;
+  isTreasury: boolean;
+  createdAt: string;
+}
+
+/** Lightweight reference used when picking a transfer counterparty. */
+export interface AccountRef {
+  id: string;
+  displayName: string;
+  isTreasury: boolean;
+}
+
+// ── Movements (immutable ledger) ────────────────────────────────────────
+
+export type MovementType =
+  'Transfer' | 'LoanDisbursement' | 'LoanRepayment' | 'CorrectiveTransfer' | 'InitialBalance';
+
+export interface Movement {
+  id: string;
+  type: MovementType;
+  fromAccountId: string;
+  fromDisplayName: string;
+  toAccountId: string;
+  toDisplayName: string;
+  amount: number;
+  currency: string;
+  categoryId?: string;
+  categoryName?: string;
+  description?: string;
+  correctsMovementId?: string;
+  occurredAt: string;
+}
+
+export interface TransferDto {
+  toAccountId: string;
+  amount: number;
+  categoryId?: string;
+  description?: string;
+}
+
+export interface MovementQuery {
+  page?: number;
+  pageSize?: number;
+  type?: MovementType;
+  from?: string;
+  to?: string;
+}
+
+// ── Categories (Admin-managed catalog, optional tag) ────────────────────
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  isDefault: boolean;
 }
 
 export interface CreateCategoryDto {
@@ -62,68 +132,90 @@ export interface CreateCategoryDto {
 
 export type UpdateCategoryDto = CreateCategoryDto;
 
-// ── Transactions ────────────────────────────────────────────────────────
+// ── Loans (simple MVP: no interest, no deadlines) ───────────────────────
 
-export type TransactionType = 'Income' | 'Expense';
+export type LoanStatus = 'Pending' | 'Approved' | 'Rejected' | 'Repaid';
 
-export interface Transaction {
+export interface Loan {
   id: string;
-  categoryId: string;
-  categoryName: string;
-  type: TransactionType;
+  clientAccountId: string;
+  clientDisplayName: string;
   amount: number;
+  repaidAmount: number;
+  outstandingAmount: number;
   currency: string;
-  date: string; // ISO DateTimeOffset
-  description?: string;
-  createdByUserId: string;
+  reason: string;
+  status: LoanStatus;
+  decidedByUserId?: string;
+  decidedAt?: string;
+  decisionNote?: string;
   createdAt: string;
 }
 
-export interface CreateTransactionDto {
-  categoryId: string;
-  type: TransactionType;
+export interface RequestLoanDto {
   amount: number;
-  currency: string;
-  date: string; // ISO DateTimeOffset
-  description?: string;
+  reason: string;
 }
 
-export type UpdateTransactionDto = CreateTransactionDto;
-
-export interface TransactionQuery {
-  page?: number;
-  pageSize?: number;
-  type?: TransactionType;
-  categoryId?: string;
-  from?: string;
-  to?: string;
+export interface DecideLoanDto {
+  approve: boolean;
+  note?: string;
 }
 
-// ── Dashboard ───────────────────────────────────────────────────────────
+export interface RepayLoanDto {
+  amount: number;
+}
+
+// ── Claims (reclamaciones — Admin mediates, both parties consent) ───────
+
+export type ClaimStatus = 'Open' | 'UnderReview' | 'Resolved' | 'Rejected';
+
+export interface Claim {
+  id: string;
+  movementId: string;
+  claimantAccountId: string;
+  claimantDisplayName: string;
+  reason: string;
+  status: ClaimStatus;
+  proposedAmount?: number;
+  correctiveFromAccountId?: string;
+  correctiveToAccountId?: string;
+  payerConsented: boolean;
+  payeeConsented: boolean;
+  resolutionNote?: string;
+  resolutionMovementId?: string;
+  createdAt: string;
+}
+
+export interface OpenClaimDto {
+  movementId: string;
+  reason: string;
+}
+
+export interface ProposeCorrectionDto {
+  amount: number;
+  fromAccountId: string;
+  toAccountId: string;
+  note?: string;
+}
+
+// ── Dashboard (caller's own account) ────────────────────────────────────
 
 export interface DashboardSummary {
-  totalIncome: number;
-  totalExpenses: number;
   balance: number;
-  transactionCount: number;
+  totalIncoming: number;
+  totalOutgoing: number;
+  movementCount: number;
   from?: string;
   to?: string;
-}
-
-export interface CategoryBreakdown {
-  categoryId: string;
-  categoryName: string;
-  type: TransactionType;
-  amount: number;
-  percentage: number;
 }
 
 export interface MonthlyPoint {
   year: number;
   month: number;
-  income: number;
-  expenses: number;
-  balance: number;
+  incoming: number;
+  outgoing: number;
+  net: number;
 }
 
 // ── Audit ───────────────────────────────────────────────────────────────
@@ -148,4 +240,29 @@ export interface EmailReportDto {
   email: string;
   from?: string;
   to?: string;
+}
+
+// ── Notifications (the bell) ───────────────────────────────────────────
+
+/** Mirrors NotificationType in the backend (Domain/Enums). */
+export type NotificationType =
+  | 'TransferReceived'
+  | 'LoanApproved'
+  | 'LoanRejected'
+  | 'LoanRepaid'
+  | 'LoanRequested'
+  | 'ClaimProposed'
+  | 'ClaimCounterpartyConsented'
+  | 'ClaimResolved'
+  | 'ClientApproved'
+  | 'ClientSuspended';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  relatedId?: string | null;
+  actorName?: string | null;
+  amount?: number | null;
+  isRead: boolean;
+  occurredAt: string;
 }

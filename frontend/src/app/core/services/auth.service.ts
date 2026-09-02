@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginDto, RegisterDto, UserRole } from '../models';
+import { AuthResponse, DemoAccount, LoginDto, RegisterDto } from '../models';
 
 /**
  * Authentication state (Signals) + API calls.
@@ -30,10 +30,6 @@ export class AuthService {
   readonly user = signal<AuthResponse | null>(null);
   readonly isAuthenticated = computed(() => this.user() !== null);
   readonly isAdmin = computed(() => this.user()?.role === 'Admin');
-  readonly canMutate = computed(() => {
-    const role = this.user()?.role as UserRole | undefined;
-    return role === 'Admin' || role === 'Finance';
-  });
 
   /** Returns the in-memory access token for the HTTP interceptor. */
   getAccessToken(): string | null {
@@ -51,6 +47,22 @@ export class AuthService {
   async register(payload: RegisterDto): Promise<AuthResponse> {
     const auth = await firstValueFrom(
       this.http.post<AuthResponse>(`${environment.apiBaseUrl}/auth/register`, payload),
+    );
+    this.setSession(auth);
+    return auth;
+  }
+
+  /** Public demo accounts for the one-click quick access (no credentials). */
+  async getDemoAccounts(): Promise<DemoAccount[]> {
+    return firstValueFrom(
+      this.http.get<DemoAccount[]>(`${environment.apiBaseUrl}/auth/demo-accounts`),
+    );
+  }
+
+  /** One-click demo login — the credentials never leave the backend. */
+  async demoLogin(account: string): Promise<AuthResponse> {
+    const auth = await firstValueFrom(
+      this.http.post<AuthResponse>(`${environment.apiBaseUrl}/auth/demo-login`, { account }),
     );
     this.setSession(auth);
     return auth;

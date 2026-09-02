@@ -1,0 +1,71 @@
+<div class="admin-clients">
+    <div class="page-head">
+        <h1>{{ 'admin.clients.title' | translate }}</h1>
+        @if (pendingCount() > 0) {
+        <mat-chip class="pending-badge">{{ 'admin.clients.pendingBadge' | translate: { count: pendingCount() }
+            }}</mat-chip>
+        }
+    </div>
+
+    <div class="filter-bar">
+        <mat-form-field appearance="outline">
+            <mat-label>{{ 'admin.clients.filter' | translate }}</mat-label>
+            <mat-select [value]="statusFilter()" (selectionChange)="onFilter($event.value)">
+                <mat-option [value]="null">{{ 'admin.clients.status.All' | translate }}</mat-option>
+                @for (status of ['Pending', 'Active', 'Suspended']; track status) {
+                <mat-option [value]="status">{{ statusLabelKey($any(status)) | translate }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    @if (items().length === 0 && !loading()) {
+    <p class="empty">{{ 'admin.clients.empty' | translate }}</p>
+    }
+
+    <div class="client-list">
+        @for (client of items(); track client.id) {
+        <mat-card class="client-card">
+            <mat-card-content>
+                <div class="client-info">
+                    <mat-icon class="avatar">{{ client.kind === 'Company' ? 'business' : 'person' }}</mat-icon>
+                    <div class="client-text">
+                        <span class="client-name">{{ client.displayName }}</span>
+                        <span class="client-meta">
+                            {{ kindLabelKey(client.kind) | translate }}
+                            · {{ 'admin.clients.since' | translate }}: {{ client.createdAt | date: 'dd MMM yyyy' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="client-side">
+                    <span class="client-balance">{{ client.balance | number: '1.2-2' }} {{ client.currency }}</span>
+                    <mat-chip [class.active]="client.status === 'Active'" [class.pending]="client.status === 'Pending'"
+                        [class.suspended]="client.status === 'Suspended'">
+                        {{ statusLabelKey(client.status) | translate }}
+                    </mat-chip>
+                    <div class="client-actions">
+                        @if (client.status === 'Pending' || client.status === 'Suspended') {
+                        <button mat-raised-button color="primary" [disabled]="busy() === client.id"
+                            (click)="approve(client)">
+                            <mat-icon>check_circle</mat-icon>
+                            {{ 'admin.clients.approve' | translate }}
+                        </button>
+                        }
+                        @if (client.status === 'Active') {
+                        <button mat-stroked-button [disabled]="busy() === client.id" (click)="confirmSuspend(client)">
+                            <mat-icon>block</mat-icon>
+                            {{ 'admin.clients.suspend' | translate }}
+                        </button>
+                        }
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+        }
+    </div>
+</div>

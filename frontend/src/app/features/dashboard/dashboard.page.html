@@ -1,6 +1,14 @@
 <div class="dashboard">
     <header class="page-header">
-        <h1>{{ 'dashboard.title' | translate }}</h1>
+        <div>
+            <h1>{{ 'dashboard.title' | translate }}</h1>
+            <p class="account-line">
+                {{ accountName() }}
+                @if (isTreasury()) {
+                <mat-chip class="treasury-chip">{{ 'dashboard.treasury' | translate }}</mat-chip>
+                }
+            </p>
+        </div>
         <button mat-stroked-button (click)="reload()">
             <mat-icon>refresh</mat-icon>
             {{ 'common.refresh' | translate }}
@@ -15,17 +23,17 @@
     <section class="kpi-grid" [class.handset]="isHandsetLayout()">
         <mat-card class="kpi-card">
             <mat-card-content>
-                <mat-icon class="kpi-icon income">trending_up</mat-icon>
-                <div class="kpi-label">{{ 'dashboard.totalIncome' | translate }}</div>
-                <div class="kpi-value income">{{ (summary()?.totalIncome ?? 0) | number: '1.2-2' }} €</div>
+                <mat-icon class="kpi-icon income">south_west</mat-icon>
+                <div class="kpi-label">{{ 'dashboard.incoming' | translate }}</div>
+                <div class="kpi-value income">{{ (summary()?.totalIncoming ?? 0) | number: '1.2-2' }} €</div>
             </mat-card-content>
         </mat-card>
 
         <mat-card class="kpi-card">
             <mat-card-content>
-                <mat-icon class="kpi-icon expense">trending_down</mat-icon>
-                <div class="kpi-label">{{ 'dashboard.totalExpenses' | translate }}</div>
-                <div class="kpi-value expense">{{ (summary()?.totalExpenses ?? 0) | number: '1.2-2' }} €</div>
+                <mat-icon class="kpi-icon expense">north_east</mat-icon>
+                <div class="kpi-label">{{ 'dashboard.outgoing' | translate }}</div>
+                <div class="kpi-value expense">{{ (summary()?.totalOutgoing ?? 0) | number: '1.2-2' }} €</div>
             </mat-card-content>
         </mat-card>
 
@@ -41,41 +49,21 @@
         <mat-card class="kpi-card">
             <mat-card-content>
                 <mat-icon class="kpi-icon">receipt_long</mat-icon>
-                <div class="kpi-label">{{ 'dashboard.transactionCount' | translate }}</div>
-                <div class="kpi-value">{{ summary()?.transactionCount ?? 0 }}</div>
+                <div class="kpi-label">{{ 'dashboard.movementCount' | translate }}</div>
+                <div class="kpi-value">{{ summary()?.movementCount ?? 0 }}</div>
             </mat-card-content>
         </mat-card>
     </section>
 
-    <!-- Charts -->
-    <section class="charts-grid" [class.handset]="isHandsetLayout()">
+    <!-- Monthly chart -->
+    <section class="charts-grid">
         <mat-card class="chart-card">
             <mat-card-header>
                 <mat-card-title>{{ 'dashboard.monthlySeries' | translate }}</mat-card-title>
             </mat-card-header>
             <mat-card-content>
                 @if (monthlyChart(); as chart) {
-                <app-chart [config]="chart" />
-                } @else {
-                <p class="empty">{{ 'dashboard.noData' | translate }}</p>
-                }
-            </mat-card-content>
-        </mat-card>
-
-        <mat-card class="chart-card">
-            <mat-card-header>
-                <mat-card-title>{{ 'dashboard.byCategory' | translate }}</mat-card-title>
-                <mat-card-actions>
-                    <mat-button-toggle-group [value]="breakdownType()" (valueChange)="switchBreakdownType($event)"
-                        aria-label="Breakdown type">
-                        <mat-button-toggle value="Income">{{ 'transactions.income' | translate }}</mat-button-toggle>
-                        <mat-button-toggle value="Expense">{{ 'transactions.expense' | translate }}</mat-button-toggle>
-                    </mat-button-toggle-group>
-                </mat-card-actions>
-            </mat-card-header>
-            <mat-card-content>
-                @if (breakdownChart(); as chart) {
-                <app-chart [config]="chart" />
+                <app-chart [config]="chart" [theme]="isDark() ? 'dark' : 'light'" />
                 } @else {
                 <p class="empty">{{ 'dashboard.noData' | translate }}</p>
                 }

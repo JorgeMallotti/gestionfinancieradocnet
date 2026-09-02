@@ -17,6 +17,14 @@ html {
       density: 0,
     )
   );
+
+  // Semantic status colors — WCAG AA (4.5:1 on the light surface).
+  --sem-success: #2e7d32; // green 800
+  --sem-success-bg: rgba(46, 125, 50, 0.15);
+  --sem-error: #c62828; // red 800
+  --sem-error-bg: rgba(198, 40, 40, 0.15);
+  --sem-warning: #e65100; // orange 900
+  --sem-warning-bg: rgba(230, 81, 0, 0.15);
 }
 
 html.dark {
@@ -33,6 +41,14 @@ html.dark {
       density: 0,
     )
   );
+
+  // 200-300 shades — WCAG AA on the dark surface.
+  --sem-success: #81c784; // green 300
+  --sem-success-bg: rgba(129, 199, 132, 0.18);
+  --sem-error: #ef9a9a; // red 200
+  --sem-error-bg: rgba(239, 154, 154, 0.18);
+  --sem-warning: #ffb74d; // orange 300
+  --sem-warning-bg: rgba(255, 183, 77, 0.18);
 }
 
 body {

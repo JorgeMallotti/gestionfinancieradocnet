@@ -15,24 +15,23 @@ public sealed class CategoryServiceTests
     private static readonly Guid UserId = Guid.NewGuid();
 
     private readonly InMemoryCategoryRepository _repository = new();
-    private readonly InMemoryTransactionRepository _transactions = new();
+    private readonly InMemoryMovementRepository _movements = new();
     private readonly FakeAuditService _audit = new();
 
     private CategoryService CreateService() => new(
         _repository,
-        _transactions,
+        _movements,
         _audit,
         new CreateCategoryValidator(),
         new UpdateCategoryValidator());
 
     private static Category SeedCategory(
-        InMemoryCategoryRepository repository, string name, bool isDefault = false) =>
+        InMemoryCategoryRepository repository, string name) =>
         new()
         {
             Id = Guid.NewGuid(),
             CompanyId = CompanyId,
             Name = name,
-            IsDefault = isDefault,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
@@ -70,7 +69,7 @@ public sealed class CategoryServiceTests
     }
 
     [Fact]
-    public async Task Create_UserRole_Forbidden()
+    public async Task Create_ClientRole_Forbidden()
     {
         var service = CreateService();
 
@@ -78,7 +77,8 @@ public sealed class CategoryServiceTests
             new CreateCategoryDto("Travel", null), CompanyId, UserId, "User", null, CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Contains("permission", result.Error);
+        Assert.Equal(ErrorCode.Forbidden, result.Code);
+        Assert.Contains("Admin", result.Error);
         Assert.Empty(_audit.Entries);
     }
 
@@ -104,7 +104,7 @@ public sealed class CategoryServiceTests
         var service = CreateService();
 
         var result = await service.UpdateAsync(
-            category.Id, new UpdateCategoryDto("Branding", "Updated"), CompanyId, UserId, "Finance", null, CancellationToken.None);
+            category.Id, new UpdateCategoryDto("Branding", "Updated"), CompanyId, UserId, "Admin", null, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Branding", result.Value!.Name);
@@ -149,38 +149,18 @@ public sealed class CategoryServiceTests
     // ── Delete ────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Delete_DefaultCategory_Fails()
-    {
-        var category = SeedCategory(_repository, "Marketing", isDefault: true);
-        _repository.Items.Add(category);
-        var service = CreateService();
-
-        var result = await service.DeleteAsync(category.Id, CompanyId, UserId, "Admin", null, CancellationToken.None);
-
-        Assert.True(result.IsFailure);
-        Assert.Contains("Default", result.Error);
-        Assert.Empty(_audit.Entries);
-    }
-
-    [Fact]
-    public async Task Delete_CategoryWithTransactions_Fails()
+    public async Task Delete_CategoryTaggedByMovements_Fails()
     {
         var category = SeedCategory(_repository, "Travel");
         _repository.Items.Add(category);
-        _transactions.Items.Add(new Transaction
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = CompanyId,
-            CategoryId = category.Id,
-            Amount = 100,
-            Date = DateTimeOffset.UtcNow,
-        });
+        _movements.Seed(CompanyId, Guid.NewGuid(), Guid.NewGuid(), MovementType.Transfer, 100m)
+            .CategoryId = category.Id;
         var service = CreateService();
 
         var result = await service.DeleteAsync(category.Id, CompanyId, UserId, "Admin", null, CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Contains("transactions", result.Error);
+        Assert.Contains("movements", result.Error);
         Assert.Empty(_audit.Entries);
     }
 

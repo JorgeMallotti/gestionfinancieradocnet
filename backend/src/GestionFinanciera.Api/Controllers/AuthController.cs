@@ -51,6 +51,37 @@ public sealed class AuthController(
         return Ok(result.Value.Auth);
     }
 
+    /// <summary>
+    /// Public metadata of the demo quick-access accounts (no credentials).
+    /// The login page renders the one-click buttons from this list.
+    /// </summary>
+    [HttpGet("demo-accounts")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<DemoAccountDto>>> GetDemoAccounts(
+        CancellationToken ct)
+    {
+        var accounts = await authService.GetDemoAccountsAsync(ct);
+        return Ok(accounts);
+    }
+
+    /// <summary>
+    /// One-click demo login. The account key is resolved server-side to the
+    /// seeded credentials — the password never travels to (or from) the client.
+    /// </summary>
+    [HttpPost("demo-login")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult<AuthResponseDto>> DemoLogin(
+        DemoLoginDto dto, CancellationToken ct)
+    {
+        var result = await authService.DemoLoginAsync(dto, ct);
+        if (result.IsFailure)
+            return Problem(result.Error, statusCode: StatusCodes.Status401Unauthorized);
+
+        SetRefreshTokenCookie(result.Value.RefreshToken);
+        return Ok(result.Value.Auth);
+    }
+
     [HttpPost("refresh")]
     [AllowAnonymous]
     [EnableRateLimiting("auth")]

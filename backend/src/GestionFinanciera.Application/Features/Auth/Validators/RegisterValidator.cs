@@ -1,21 +1,21 @@
 using FluentValidation;
 
 using GestionFinanciera.Application.Features.Auth.DTOs;
+using GestionFinanciera.Domain.Enums;
 
 namespace GestionFinanciera.Application.Features.Auth.Validators;
 
-/// <summary>Validates the signup contract (whitelist semantics).</summary>
+/// <summary>Validates the client signup contract (whitelist semantics).</summary>
 public sealed class RegisterValidator : AbstractValidator<RegisterDto>
 {
     public RegisterValidator()
     {
-        RuleFor(x => x.CompanyName)
+        RuleFor(x => x.DisplayName)
             .NotEmpty()
-            .MaximumLength(100);
+            .MaximumLength(120);
 
-        RuleFor(x => x.FullName)
-            .NotEmpty()
-            .MaximumLength(100);
+        RuleFor(x => x.Kind)
+            .IsInEnum();
 
         RuleFor(x => x.Email)
             .NotEmpty()

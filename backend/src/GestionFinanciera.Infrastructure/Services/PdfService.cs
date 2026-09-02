@@ -41,9 +41,10 @@ public sealed class PdfService : IPdfService
 
                 page.Header().Column(header =>
                 {
-                    header.Item().Text("Financial Report")
+                    header.Item().Text("Account Statement")
                         .FontSize(20).Bold().FontColor(Colors.Blue.Darken2);
                     header.Item().Text(data.CompanyName).FontSize(13);
+                    header.Item().Text($"Account: {data.AccountDisplayName}").FontSize(11);
                     header.Item().Text($"Period: {period}").FontSize(10).FontColor(Colors.Grey.Darken2);
                     header.Item().PaddingBottom(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                 });
@@ -59,13 +60,13 @@ public sealed class PdfService : IPdfService
 
                     column.Item().Row(row =>
                     {
-                        row.RelativeItem().Text("Total income").FontColor(Colors.Grey.Darken2);
-                        row.RelativeItem().AlignRight().Text(data.TotalIncome.ToString("N2")).Bold();
+                        row.RelativeItem().Text("Total incoming").FontColor(Colors.Grey.Darken2);
+                        row.RelativeItem().AlignRight().Text(data.TotalIncoming.ToString("N2")).Bold();
                     });
                     column.Item().Row(row =>
                     {
-                        row.RelativeItem().Text("Total expenses").FontColor(Colors.Grey.Darken2);
-                        row.RelativeItem().AlignRight().Text(data.TotalExpenses.ToString("N2")).Bold();
+                        row.RelativeItem().Text("Total outgoing").FontColor(Colors.Grey.Darken2);
+                        row.RelativeItem().AlignRight().Text(data.TotalOutgoing.ToString("N2")).Bold();
                     });
                     column.Item().Row(row =>
                     {
@@ -74,11 +75,11 @@ public sealed class PdfService : IPdfService
                             .Bold().FontColor(data.Balance >= 0 ? Colors.Green.Darken2 : Colors.Red.Darken2);
                     });
 
-                    column.Item().PaddingTop(4).Text("Transactions").FontSize(14).Bold();
+                    column.Item().PaddingTop(4).Text("Movements").FontSize(14).Bold();
 
-                    if (data.Transactions.Count == 0)
+                    if (data.Movements.Count == 0)
                     {
-                        column.Item().Text("No transactions in the selected period.")
+                        column.Item().Text("No movements in the selected period.")
                             .FontColor(Colors.Grey.Medium).Italic();
                     }
                     else
@@ -87,29 +88,29 @@ public sealed class PdfService : IPdfService
                         {
                             table.ColumnsDefinition(columns =>
                             {
-                                columns.RelativeColumn(1.2f); // Date
-                                columns.RelativeColumn(1.6f); // Category
+                                columns.RelativeColumn(1.1f); // Date
                                 columns.RelativeColumn(1.0f); // Type
+                                columns.RelativeColumn(1.5f); // From
+                                columns.RelativeColumn(1.5f); // To
                                 columns.RelativeColumn(1.0f); // Amount
-                                columns.RelativeColumn(2.2f); // Description
                             });
 
                             table.Header(header =>
                             {
                                 header.Cell().Text("Date").Bold();
-                                header.Cell().Text("Category").Bold();
                                 header.Cell().Text("Type").Bold();
+                                header.Cell().Text("From").Bold();
+                                header.Cell().Text("To").Bold();
                                 header.Cell().AlignRight().Text("Amount").Bold();
-                                header.Cell().Text("Description").Bold();
                             });
 
-                            foreach (var t in data.Transactions)
+                            foreach (var m in data.Movements)
                             {
-                                table.Cell().Text(t.Date.ToString("yyyy-MM-dd"));
-                                table.Cell().Text(t.CategoryName);
-                                table.Cell().Text(t.Type.ToString());
-                                table.Cell().AlignRight().Text(t.Amount.ToString("N2"));
-                                table.Cell().Text(t.Description ?? string.Empty);
+                                table.Cell().Text(m.OccurredAt.ToString("yyyy-MM-dd"));
+                                table.Cell().Text(m.Type.ToString());
+                                table.Cell().Text(m.FromDisplayName);
+                                table.Cell().Text(m.ToDisplayName);
+                                table.Cell().AlignRight().Text(m.Amount.ToString("N2"));
                             }
                         });
                     }

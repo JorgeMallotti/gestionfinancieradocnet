@@ -20,6 +20,12 @@
 
 .topbar {
   gap: 4px;
+
+  // WCAG: touch targets ≥ 48px (Material icon buttons default to 40px).
+  [mat-icon-button] {
+    min-width: 48px;
+    min-height: 48px;
+  }
 }
 
 .spacer {
@@ -43,9 +49,14 @@
   color: var(--mat-sys-on-secondary-container);
 }
 
-/* Mobile-first: reduce padding on small screens */
+/* Mobile-first: reduce padding and shrink the language picker on small screens */
 @media (max-width: 599px) {
   .content {
     padding: 12px;
+  }
+
+  .lang-select {
+    width: 84px;
+    font-size: 12px;
   }
 }

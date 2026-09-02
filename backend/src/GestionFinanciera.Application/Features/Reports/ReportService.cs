@@ -1,22 +1,24 @@
 using FluentValidation;
 
 using GestionFinanciera.Application.Common.Results;
+using GestionFinanciera.Application.Features.Accounts.Interfaces;
 using GestionFinanciera.Application.Features.Companies.Interfaces;
+using GestionFinanciera.Application.Features.Movements.DTOs;
+using GestionFinanciera.Application.Features.Movements.Interfaces;
 using GestionFinanciera.Application.Features.Reports.DTOs;
 using GestionFinanciera.Application.Features.Reports.Interfaces;
-using GestionFinanciera.Application.Features.Transactions.DTOs;
-using GestionFinanciera.Application.Features.Transactions.Interfaces;
-using GestionFinanciera.Domain.Enums;
 
 namespace GestionFinanciera.Application.Features.Reports;
 
 /// <summary>
-/// Builds the report data (company name, transactions in range, totals) and
-/// delegates generation/sending to the infrastructure ports. Contains no
-/// QuestPDF/ClosedXML/MailKit code — that stays behind the ports.
+/// Builds the report data (bank name, account display name, own movements in
+/// range, incoming/outgoing totals) and delegates generation/sending to the
+/// infrastructure ports. Contains no QuestPDF/ClosedXML/MailKit code — that
+/// stays behind the ports.
 /// </summary>
 public sealed class ReportService(
-    ITransactionRepository transactions,
+    IAccountRepository accounts,
+    IMovementRepository movements,
     ICompanyRepository companies,
     IPdfService pdf,
     IExcelService excel,
@@ -24,60 +26,70 @@ public sealed class ReportService(
     IValidator<EmailReportDto> emailValidator) : IReportService
 {
     public async Task<Result<byte[]>> GeneratePdfAsync(
-        Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
+        Guid companyId, Guid userId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
-        if (IsInvalidRange(from, to))
-            return Result<byte[]>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
+        var dataResult = await BuildReportDataAsync(companyId, userId, from, to, ct);
+        if (dataResult.IsFailure)
+            return Result<byte[]>.Failure(dataResult.Code, dataResult.Error!);
 
-        var data = await BuildReportDataAsync(companyId, from, to, ct);
-        byte[] bytes = await pdf.GenerateAsync(data, ct);
+        byte[] bytes = await pdf.GenerateAsync(dataResult.Value!, ct);
         return Result<byte[]>.Success(bytes);
     }
 
     public async Task<Result<byte[]>> GenerateExcelAsync(
-        Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
+        Guid companyId, Guid userId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
-        if (IsInvalidRange(from, to))
-            return Result<byte[]>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
+        var dataResult = await BuildReportDataAsync(companyId, userId, from, to, ct);
+        if (dataResult.IsFailure)
+            return Result<byte[]>.Failure(dataResult.Code, dataResult.Error!);
 
-        var data = await BuildReportDataAsync(companyId, from, to, ct);
-        byte[] bytes = await excel.GenerateAsync(data, ct);
+        byte[] bytes = await excel.GenerateAsync(dataResult.Value!, ct);
         return Result<byte[]>.Success(bytes);
     }
 
     public async Task<Result> SendByEmailAsync(
-        EmailReportDto dto, Guid companyId, CancellationToken ct)
+        EmailReportDto dto, Guid companyId, Guid userId, CancellationToken ct)
     {
         var validation = await emailValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
             return Result.Failure(validation.Errors.First().ErrorMessage);
 
-        var data = await BuildReportDataAsync(companyId, dto.From, dto.To, ct);
-        byte[] pdfBytes = await pdf.GenerateAsync(data, ct);
+        var dataResult = await BuildReportDataAsync(companyId, userId, dto.From, dto.To, ct);
+        if (dataResult.IsFailure)
+            return Result.Failure(dataResult.Code, dataResult.Error!);
+
+        byte[] pdfBytes = await pdf.GenerateAsync(dataResult.Value!, ct);
 
         return await email.SendReportAsync(
-            dto.Email, data.CompanyName, dto.From, dto.To, pdfBytes, ct);
+            dto.Email, dataResult.Value!.CompanyName, dto.From, dto.To, pdfBytes, ct);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    private async Task<ReportDataDto> BuildReportDataAsync(
-        Guid companyId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
+    private async Task<Result<ReportDataDto>> BuildReportDataAsync(
+        Guid companyId, Guid userId, DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)
     {
-        string companyName = await companies.GetNameAsync(companyId, ct) ?? "Company";
-        var items = await transactions.GetInRangeAsync(companyId, from, to, ct);
+        if (from.HasValue && to.HasValue && from.Value > to.Value)
+            return Result<ReportDataDto>.Failure(ErrorCode.Validation, "'From' cannot be after 'To'.");
 
-        var dtos = items.Select(TransactionDto.FromEntity).ToList();
+        var account = await accounts.GetByOwnerUserIdAsync(companyId, userId, ct);
+        if (account is null)
+            return Result<ReportDataDto>.Failure(ErrorCode.NotFound, "No account is linked to this user.");
 
-        return new ReportDataDto(
+        string companyName = await companies.GetNameAsync(companyId, ct) ?? "Bank";
+        var items = await movements.GetByAccountInRangeAsync(companyId, account.Id, from, to, ct);
+
+        var dtos = items.Select(MovementDto.FromEntity).ToList();
+
+        var data = new ReportDataDto(
             companyName,
+            account.DisplayName,
             dtos,
-            dtos.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount),
-            dtos.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount),
+            dtos.Where(m => m.ToAccountId == account.Id).Sum(m => m.Amount),
+            dtos.Where(m => m.FromAccountId == account.Id).Sum(m => m.Amount),
             from,
             to);
-    }
 
-    private static bool IsInvalidRange(DateTimeOffset? from, DateTimeOffset? to) =>
-        from.HasValue && to.HasValue && from.Value > to.Value;
+        return Result<ReportDataDto>.Success(data);
+    }
 }

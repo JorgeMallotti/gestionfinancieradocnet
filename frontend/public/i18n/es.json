@@ -1,14 +1,17 @@
-﻿{
+{
   "app": {
-    "name": "Gestor Financiero"
+    "name": "Acme Bank"
   },
   "nav": {
     "dashboard": "Panel",
-    "transactions": "Transacciones",
+    "movements": "Movimientos",
+    "loans": "Préstamos",
+    "claims": "Reclamaciones",
     "categories": "Categorías",
     "reports": "Informes",
+    "adminClients": "Clientes",
     "audit": "Auditoría",
-    "logout": "Cerrar sesión"
+    "website": "Visitar web"
   },
   "common": {
     "save": "Guardar",
@@ -28,105 +31,243 @@
     "menu": "Menú",
     "themeLight": "Cambiar a tema claro",
     "themeDark": "Cambiar a tema oscuro",
-    "togglePassword": "Mostrar u ocultar contraseña",
+    "togglePassword": "Mostrar/ocultar contraseña",
     "required": "Este campo es obligatorio",
     "maxLength": "El valor es demasiado largo",
     "refresh": "Actualizar",
     "all": "Todos",
     "clear": "Limpiar",
-    "noData": "Todavía no hay datos",
-    "noDescription": "Sin descripción"
+    "noData": "Aún no hay datos",
+    "noDescription": "Sin descripción",
+    "userMenu": "Menú de usuario",
+    "none": "Ninguna",
+    "yes": "Sí",
+    "no": "No"
   },
   "auth": {
     "login": "Iniciar sesión",
     "register": "Crear cuenta",
+    "goLogin": "Ir a iniciar sesión",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "confirmPassword": "Confirmar contraseña",
-    "companyName": "Nombre de la empresa",
-    "fullName": "Nombre completo",
+    "accountKind": "Tipo de cuenta",
+    "kindPerson": "Persona",
+    "kindCompany": "Empresa",
+    "displayName": "Nombre visible",
+    "displayNameHint": "Tu nombre completo (persona) o el nombre de la empresa.",
     "loginTitle": "Bienvenido de nuevo",
-    "loginSubtitle": "Inicia sesión en el espacio de tu empresa",
-    "registerTitle": "Crea tu empresa",
-    "registerSubtitle": "Configura tu espacio en minutos",
-    "logoutSuccess": "Has cerrado la sesión",
+    "loginSubtitle": "Accede a tu cuenta bancaria",
+    "registerTitle": "Abre tu cuenta",
+    "registerSubtitle": "Regístrate como cliente del banco (persona o empresa)",
+    "openAccount": "Abrir cuenta",
     "errorGeneric": "Error de autenticación. Inténtalo de nuevo.",
     "errorEmailExists": "Ya existe una cuenta con este correo.",
-    "errorInvalidCredentials": "Correo o contraseña incorrectos.",
+    "errorInvalidCredentials": "Correo o contraseña inválidos.",
     "errorEmailInvalid": "Introduce un correo válido.",
     "errorPasswordMin": "La contraseña debe tener al menos 8 caracteres.",
-    "errorPasswordMismatch": "Las contraseñas no coinciden."
+    "errorPasswordMismatch": "Las contraseñas no coinciden.",
+    "pendingTitle": "Solicitud recibida",
+    "pendingSubtitle": "Tu cuenta está pendiente de aprobación",
+    "pendingStep1": "Tu cuenta se creó con estado Pendiente. El operador del banco debe aprobarla antes de que puedas enviar dinero, pedir préstamos o abrir reclamaciones.",
+    "pendingStep2": "El operador aprueba clientes nuevos desde la página Clientes (rol Administrador).",
+    "pendingTip": "Demo: entra como Administrador (botón demo) y aprueba el nuevo cliente desde la sección Clientes.",
+    "demoTitle": "Acceso demo rápido",
+    "demoSubtitle": "Un clic, sin registro. Explora el banco demo.",
+    "demo": {
+      "accounts": {
+        "admin": {
+          "label": "Operador del banco (Admin)",
+          "description": "Aprueba clientes, decide préstamos y media reclamaciones."
+        },
+        "ana": {
+          "label": "Ana (cliente persona)",
+          "description": "Envía dinero, devuelve préstamos y abre reclamaciones."
+        },
+        "xyz": {
+          "label": "XYZ Solutions (cliente empresa)",
+          "description": "Envía dinero, devuelve préstamos y abre reclamaciones."
+        }
+      }
+    }
   },
   "dashboard": {
     "title": "Panel",
-    "totalIncome": "Ingresos totales",
-    "totalExpenses": "Gastos totales",
-    "balance": "Balance",
-    "transactionCount": "Transacciones",
-    "monthlySeries": "Ingresos vs gastos mensuales",
-    "byCategory": "Por categoría",
-    "noData": "Todavía no hay datos que mostrar"
+    "incoming": "Dinero recibido",
+    "outgoing": "Dinero enviado",
+    "balance": "Saldo",
+    "movementCount": "Movimientos",
+    "monthlySeries": "Entradas vs salidas mensuales",
+    "noData": "Aún no hay datos que mostrar",
+    "treasury": "Tesorería del banco"
+  },
+  "movements": {
+    "description": "Descripción",
+    "amount": "Importe",
+    "empty": "Aún no hay movimientos. Envía dinero a otro cliente para verlo aquí.",
+    "detailTitle": "Detalle del movimiento",
+    "type": "Tipo",
+    "from": "De",
+    "to": "A",
+    "date": "Fecha",
+    "category": "Categoría",
+    "correctionOf": "Corrección del movimiento",
+    "types": {
+      "Transfer": "Transferencia",
+      "LoanDisbursement": "Desembolso de préstamo",
+      "LoanRepayment": "Devolución de préstamo",
+      "CorrectiveTransfer": "Transferencia correctiva",
+      "InitialBalance": "Saldo inicial"
+    }
+  },
+  "transfers": {
+    "send": "Enviar dinero",
+    "to": "Receptor",
+    "amount": "Importe",
+    "categoryOptional": "Categoría (opcional)",
+    "description": "Descripción (opcional)",
+    "confirm": "Enviar",
+    "errorAmountMin": "El importe debe ser mayor que cero.",
+    "sent": "Dinero enviado",
+    "bankTreasuryPrefix": "🏦 "
   },
   "categories": {
     "title": "Categorías",
     "create": "Nueva categoría",
     "name": "Nombre",
     "description": "Descripción",
-    "isDefault": "Tipo",
-    "defaultChip": "Por defecto",
     "createTitle": "Nueva categoría",
     "editTitle": "Editar categoría",
-    "deleteTitle": "Eliminar categoría",
-    "deleteMessage": "Esta categoría se eliminará permanentemente. Esta acción no se puede deshacer.",
+    "detailsTitle": "Detalle de categoría",
+    "catalogHint": "Catálogo gestionado por el banco. Los clientes pueden etiquetar sus movimientos con estas categorías (opcional).",
+    "deleteImplications": "Eliminar una categoría es permanente. Las ya usadas como etiqueta se mantienen en sus movimientos, pero no podrán elegirse para nuevos.",
+    "understandCheck": "Entiendo las consecuencias",
     "created": "Categoría creada",
     "updated": "Categoría actualizada",
     "deleted": "Categoría eliminada"
   },
-  "transactions": {
-    "title": "Transacciones",
-    "create": "Nueva transacción",
-    "type": "Tipo",
-    "category": "Categoría",
-    "date": "Fecha",
+  "loans": {
+    "request": "Solicitar préstamo",
+    "requested": "Solicitud enviada — el operador la revisará",
     "amount": "Importe",
-    "currency": "Moneda",
-    "description": "Descripción",
-    "income": "Ingreso",
-    "expense": "Gasto",
-    "from": "Desde",
-    "to": "Hasta",
-    "createTitle": "Nueva transacción",
-    "editTitle": "Editar transacción",
-    "deleteTitle": "Eliminar transacción",
-    "deleteMessage": "Esta transacción se eliminará permanentemente. Esta acción no se puede deshacer.",
-    "errorAmountMin": "El importe debe ser mayor que cero.",
-    "errorCurrency": "La moneda debe tener 3 letras (p. ej. EUR).",
-    "created": "Transacción creada",
-    "updated": "Transacción actualizada",
-    "deleted": "Transacción eliminada"
+    "reason": "Motivo",
+    "requestHint": "El operador del banco revisa tu solicitud y la financia desde la tesorería si la aprueba. Sin intereses ni plazos.",
+    "empty": "Aún no hay préstamos.",
+    "status": {
+      "Pending": "Pendiente",
+      "Approved": "Aprobado",
+      "Rejected": "Rechazado",
+      "Repaid": "Devuelto"
+    },
+    "outstanding": "Pendiente",
+    "repaidLabel": "Devuelto",
+    "decisionNote": "Nota del operador",
+    "noteOptional": "Nota (opcional)",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "approved": "Préstamo aprobado — la tesorería transfirió los fondos",
+    "rejected": "Préstamo rechazado",
+    "repayAmount": "Importe a devolver",
+    "repay": "Devolver",
+    "repaid": "Pago recibido",
+    "errorRepayAmount": "Introduce un importe válido a devolver.",
+    "errorAmountMin": "El importe debe ser mayor que cero."
+  },
+  "claims": {
+    "open": "Abrir reclamación",
+    "movement": "Movimiento",
+    "reason": "Motivo",
+    "openedBy": "Abierta por",
+    "empty": "Aún no hay reclamaciones.",
+    "status": {
+      "Open": "Abierta",
+      "UnderReview": "En revisión",
+      "Resolved": "Resuelta",
+      "Rejected": "Rechazada"
+    },
+    "proposal": "Corrección propuesta",
+    "payerConsent": "Consiente el remitente",
+    "payeeConsent": "Consiente el receptor",
+    "proposeAction": "Proponer corrección (mediar)",
+    "confirmProposal": "Enviar propuesta",
+    "amount": "Importe",
+    "from": "Devolver desde",
+    "to": "Devolver a",
+    "consent": "Consiento",
+    "refuse": "No consiento",
+    "consented": "Consentimiento registrado",
+    "refused": "Rechazaste la corrección",
+    "youConsented": "Ya diste tu consentimiento",
+    "opened": "Reclamación abierta",
+    "proposed": "Corrección propuesta — esperando a ambas partes",
+    "movementPlaceholder": "Elige uno de tus movimientos"
+  },
+  "admin": {
+    "clients": {
+      "title": "Clientes",
+      "pendingBadge": "{{ count }} pendientes",
+      "filter": "Estado",
+      "status": {
+        "All": "Todos",
+        "Pending": "Pendiente",
+        "Active": "Activo",
+        "Suspended": "Suspendido"
+      },
+      "approve": "Aprobar",
+      "suspend": "Suspender",
+      "suspendTitle": "Suspender cliente",
+      "suspendMessage": "Esto desactiva la cuenta del cliente: no podrá enviar dinero, pedir préstamos ni abrir reclamaciones hasta que lo apruebes de nuevo. Su saldo e historial se conservan.",
+      "approved": "Cliente aprobado — ya puede operar",
+      "suspended": "Cliente suspendido",
+      "since": "Cliente desde",
+      "empty": "Ningún cliente coincide con el filtro."
+    }
   },
   "reports": {
     "title": "Informes",
-    "pdfTitle": "Informe PDF",
-    "pdfSubtitle": "Estado financiero en un documento PDF",
+    "pdf": "PDF",
+    "excel": "Excel",
+    "pdfTitle": "Extracto PDF",
+    "pdfSubtitle": "Tus movimientos como documento PDF",
     "downloadPdf": "Descargar PDF",
-    "excelTitle": "Exportar a Excel",
-    "excelSubtitle": "Transacciones en un libro de Excel",
+    "excelTitle": "Exportar Excel",
+    "excelSubtitle": "Tus movimientos como libro Excel",
     "downloadExcel": "Descargar Excel",
     "emailTitle": "Enviar por correo",
-    "emailSubtitle": "Envía el informe PDF a un correo electrónico",
+    "emailSubtitle": "Envía el extracto PDF a una dirección",
     "emailTo": "Correo del destinatario",
+    "fromDate": "Desde",
+    "toDate": "Hasta",
     "sendEmail": "Enviar",
     "emailSent": "Informe enviado por correo",
-    "smtpNotConfigured": "SMTP no está configurado todavía. Revisa la configuración del servidor."
+    "smtpNotConfigured": "SMTP aún no está configurado. Revisa la configuración del servidor."
   },
   "audit": {
     "title": "Auditoría",
     "adminOnly": "Visible solo para administradores",
-    "timestamp": "Fecha y hora",
+    "timestamp": "Fecha",
     "entity": "Entidad",
     "action": "Acción",
     "user": "Usuario",
-    "ip": "Dirección IP"
+    "ip": "IP"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "Aún no hay notificaciones.",
+    "markAllRead": "Marcar todas como leídas",
+    "unread": "{{ count }} notificaciones sin leer",
+    "open": "Abrir notificaciones",
+    "types": {
+      "TransferReceived": "{{ actor }} te envió {{ amount }}",
+      "LoanApproved": "Tu préstamo de {{ amount }} fue aprobado y financiado",
+      "LoanRejected": "Tu préstamo de {{ amount }} fue rechazado",
+      "LoanRepaid": "{{ actor }} devolvió {{ amount }}",
+      "LoanRequested": "{{ actor }} solicitó un préstamo de {{ amount }}",
+      "ClaimProposed": "Se propuso una transferencia correctiva de {{ amount }} para una reclamación",
+      "ClaimCounterpartyConsented": "{{ actor }} consintió la transferencia correctiva de {{ amount }}",
+      "ClaimResolved": "Una reclamación se resolvió con una transferencia correctiva de {{ amount }}",
+      "ClientApproved": "Tu cuenta de cliente fue aprobada — ya puedes operar",
+      "ClientSuspended": "El operador del banco suspendió tu cuenta de cliente"
+    }
   }
 }

@@ -1,0 +1,126 @@
+.movements {
+  .page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .head-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  .hidden {
+    visibility: hidden;
+  }
+
+  .list-card {
+    mat-card-content {
+      padding: 8px 16px;
+    }
+  }
+
+  .movements-table {
+    width: 100%;
+
+    .amount-col {
+      text-align: right;
+    }
+  }
+
+  .clickable {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .clickable-row:hover {
+    background: var(--mat-sys-surface-variant);
+  }
+
+  .movement-description {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .direction-icon {
+      flex-shrink: 0;
+      color: var(--mat-sys-error);
+      &.in {
+        color: var(--sem-success, #2e7d32);
+      }
+    }
+
+    .movement-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+
+      .movement-title {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .movement-meta {
+        font-size: 0.78rem;
+        opacity: 0.7;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .amount {
+    font-weight: 600;
+    color: var(--sem-success, #2e7d32);
+
+    &.negative {
+      color: var(--sem-error, #c62828);
+    }
+  }
+
+  .date {
+    display: block;
+    font-size: 0.72rem;
+    opacity: 0.65;
+  }
+
+  .mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .mobile-movement {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      height: auto;
+      padding: 10px 12px;
+      white-space: normal;
+      text-align: left;
+
+      .movement-description {
+        min-width: 0;
+      }
+    }
+  }
+
+  .empty {
+    text-align: center;
+    opacity: 0.6;
+    padding: 24px 0;
+    margin: 0;
+  }
+}

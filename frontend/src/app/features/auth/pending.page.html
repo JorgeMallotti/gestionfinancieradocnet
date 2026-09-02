@@ -1,0 +1,20 @@
+<div class="auth-page">
+    <mat-card class="auth-card">
+        <mat-card-header>
+            <mat-card-title class="pending-title">
+                <mat-icon>hourglass_top</mat-icon>
+                {{ 'auth.pendingTitle' | translate }}
+            </mat-card-title>
+            <mat-card-subtitle>{{ 'auth.pendingSubtitle' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="pending-content">
+            <p>{{ 'auth.pendingStep1' | translate }}</p>
+            <p>{{ 'auth.pendingStep2' | translate }}</p>
+            <mat-divider></mat-divider>
+            <p class="pending-tip">{{ 'auth.pendingTip' | translate }}</p>
+        </mat-card-content>
+        <mat-card-actions align="end">
+            <a mat-raised-button color="primary" routerLink="/auth/login">{{ 'auth.goLogin' | translate }}</a>
+        </mat-card-actions>
+    </mat-card>
+</div>

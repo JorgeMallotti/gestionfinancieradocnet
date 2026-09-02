@@ -1,4 +1,12 @@
-import { Component, ElementRef, Input, OnDestroy, ViewChild, afterNextRender } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Input,
+  OnChanges,
+  OnDestroy,
+  ViewChild,
+  afterNextRender,
+} from '@angular/core';
 import {
   BarController,
   BarElement,
@@ -36,6 +44,7 @@ Chart.register(
  * Minimal Chart.js wrapper for standalone Angular components.
  * Receives a ready ChartConfiguration via @Input and destroys the chart
  * instance on destroy (prevents memory leaks with OnPush).
+ * Re-renders whenever the config or theme change (e.g. dark mode toggle).
  */
 @Component({
   selector: 'app-chart',
@@ -53,16 +62,25 @@ Chart.register(
     `,
   ],
 })
-export class ChartComponent implements OnDestroy {
+export class ChartComponent implements OnChanges, OnDestroy {
   @ViewChild('canvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>;
 
   @Input() config: ChartConfiguration | null = null;
+
+  /** 'dark' when the app is in dark mode — chart colors must stay readable. */
+  @Input() theme: 'light' | 'dark' = 'light';
 
   private chart: Chart | undefined;
 
   constructor() {
     // Chart.js needs the canvas to be in the DOM; afterNextRender handles it.
     afterNextRender(() => this.render());
+  }
+
+  ngOnChanges(): void {
+    // The first change fires before afterNextRender (chart not created yet);
+    // subsequent changes (new data, theme toggle) re-render the chart.
+    if (this.chart) this.render();
   }
 
   ngOnDestroy(): void {

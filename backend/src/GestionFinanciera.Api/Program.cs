@@ -9,6 +9,7 @@ using GestionFinanciera.Api.Middleware;
 using GestionFinanciera.Application.Features.Auth.DTOs;
 using GestionFinanciera.Infrastructure;
 using GestionFinanciera.Infrastructure.Identity;
+using GestionFinanciera.Infrastructure.Persistence;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -181,6 +182,15 @@ try
 
     app.MapControllers();
     app.MapHealthChecks("/health");
+
+    // Demo quick access seeding — no-op when Demo:Enabled=false. Runs once at
+    // startup with NO tenant (request context), so the multi-tenant query
+    // filters are neutral. Idempotent: existing accounts/data are left intact.
+    using (IServiceScope scope = app.Services.CreateScope())
+    {
+        var demoSeeder = scope.ServiceProvider.GetRequiredService<DemoSeeder>();
+        await demoSeeder.SeedAsync(CancellationToken.None);
+    }
 
     app.Run();
 }

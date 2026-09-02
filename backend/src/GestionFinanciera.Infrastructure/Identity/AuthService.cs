@@ -4,6 +4,7 @@ using System.Text;
 using FluentValidation;
 
 using GestionFinanciera.Application.Common.Results;
+using GestionFinanciera.Application.Features.Auth;
 using GestionFinanciera.Application.Features.Auth.DTOs;
 using GestionFinanciera.Application.Features.Auth.Interfaces;
 using GestionFinanciera.Domain.Entities;
@@ -19,7 +20,7 @@ namespace GestionFinanciera.Infrastructure.Identity;
 
 /// <summary>
 /// Auth implementation using ASP.NET Core Identity + JWT.
-/// Register creates a company with its Admin and the default categories.
+/// Register opens a CLIENT account (Pending) under the single seeded bank.
 /// </summary>
 public sealed class AuthService(
     UserManager<ApplicationUser> userManager,
@@ -29,18 +30,12 @@ public sealed class AuthService(
     IOptions<JwtOptions> jwtOptions,
     IValidator<RegisterDto> registerValidator,
     IValidator<LoginDto> loginValidator,
+    IValidator<DemoLoginDto> demoLoginValidator,
+    IOptions<DemoOptions> demoOptions,
     ILogger<AuthService> logger) : IAuthService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
-
-    private static readonly string[] DefaultRoles = ["Admin", "Finance", "User"];
-
-    private static readonly (string Name, string? Description)[] DefaultCategories =
-    [
-        ("Marketing", "Marketing and advertising expenses"),
-        ("Sales", "Revenue from sales"),
-        ("Operations", "Operational costs"),
-    ];
+    private readonly DemoOptions _demoOptions = demoOptions.Value;
 
     public async Task<Result<(AuthResponseDto Auth, string RefreshToken)>> RegisterAsync(
         RegisterDto dto, CancellationToken ct)
@@ -53,16 +48,17 @@ public sealed class AuthService(
         if (existing is not null)
             return Result<(AuthResponseDto, string)>.Failure("An account with this email already exists.");
 
-        await EnsureRolesAsync(ct);
+        await RoleSeeder.EnsureRolesAsync(roleManager, ct);
 
-        // 1. Company (tenant) — created ONLY here, from the signup payload.
-        var company = new Company { Name = dto.CompanyName.Trim() };
-        dbContext.Companies.Add(company);
+        // The bank (Company) is a single seeded row. If it does not exist yet
+        // (e.g. fresh DB, demo disabled), create it — the MVP has ONE bank and
+        // registration NEVER creates another one.
+        Company company = await GetOrCreateBankAsync(ct);
 
-        // 2. Admin user bound to the company
+        // 1. Client user (role User — never Admin) bound to the bank.
         var user = new ApplicationUser
         {
-            FullName = dto.FullName.Trim(),
+            FullName = dto.DisplayName.Trim(),
             Email = dto.Email,
             UserName = dto.Email,
             CompanyId = company.Id,
@@ -72,33 +68,50 @@ public sealed class AuthService(
         if (!createResult.Succeeded)
             return Result<(AuthResponseDto, string)>.Failure(createResult.Errors.First().Description);
 
-        await userManager.AddToRoleAsync(user, nameof(UserRole.Admin));
+        await userManager.AddToRoleAsync(user, nameof(UserRole.User));
 
-        // 3. Default categories for the new company
-        var categories = DefaultCategories
-            .Select(c => new Category
-            {
-                CompanyId = company.Id,
-                Name = c.Name,
-                Description = c.Description,
-                IsDefault = true,
-            })
-            .ToList();
+        // 2. Client account with status Pending — the bank Admin must approve it
+        //    before the client can operate (no balance yet).
+        dbContext.ClientAccounts.Add(new ClientAccount
+        {
+            CompanyId = company.Id,
+            OwnerUserId = user.Id,
+            DisplayName = dto.DisplayName.Trim(),
+            Kind = dto.Kind,
+            Status = AccountStatus.Pending,
+            Balance = 0m,
+            Currency = "EUR",
+            IsTreasury = false,
+        });
 
-        dbContext.Categories.AddRange(categories);
-
-        // 4. Tokens
+        // 3. Tokens.
         var refreshTokenValue = JwtService.GenerateRefreshToken();
         dbContext.RefreshTokens.Add(CreateRefreshTokenEntity(user.Id, refreshTokenValue));
         await dbContext.SaveChangesAsync(ct);
 
         string accessToken = jwtService.GenerateAccessToken(
-            user.Id, user.FullName, user.Email!, nameof(UserRole.Admin), company.Id);
+            user.Id, user.FullName, user.Email!, nameof(UserRole.User), company.Id);
 
-        logger.LogInformation("New company registered: {CompanyId} by {UserId}", company.Id, user.Id);
+        logger.LogInformation("New client account requested: {UserId} under bank {CompanyId} (Pending approval).",
+            user.Id, company.Id);
 
-        var auth = BuildResponse(accessToken, user, nameof(UserRole.Admin), company);
+        var auth = BuildResponse(accessToken, user, nameof(UserRole.User), company);
         return Result<(AuthResponseDto, string)>.Success((auth, refreshTokenValue));
+    }
+
+    /// <summary>Finds the single bank or creates it once (idempotent by name).</summary>
+    private async Task<Company> GetOrCreateBankAsync(CancellationToken ct)
+    {
+        Company? bank = await dbContext.Companies
+            .SingleOrDefaultAsync(c => c.Name == DemoCatalog.CompanyName, ct);
+
+        if (bank is not null)
+            return bank;
+
+        bank = new Company { Name = DemoCatalog.CompanyName };
+        dbContext.Companies.Add(bank);
+        await dbContext.SaveChangesAsync(ct);
+        return bank;
     }
 
     public async Task<Result<(AuthResponseDto Auth, string RefreshToken)>> LoginAsync(
@@ -199,16 +212,34 @@ public sealed class AuthService(
         return Result.Success();
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
-    private async Task EnsureRolesAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<DemoAccountDto>> GetDemoAccountsAsync(CancellationToken ct)
     {
-        foreach (string role in DefaultRoles)
-        {
-            if (!await roleManager.RoleExistsAsync(role))
-                await roleManager.CreateAsync(new IdentityRole<Guid>(role));
-        }
+        if (!_demoOptions.Enabled)
+            return [];
+
+        return DemoCatalog.ToDtos();
     }
+
+    public async Task<Result<(AuthResponseDto Auth, string RefreshToken)>> DemoLoginAsync(
+        DemoLoginDto dto, CancellationToken ct)
+    {
+        var validation = await demoLoginValidator.ValidateAsync(dto, ct);
+        if (!validation.IsValid)
+            return Result<(AuthResponseDto, string)>.Failure(validation.Errors.First().ErrorMessage);
+
+        if (!_demoOptions.Enabled)
+            return Result<(AuthResponseDto, string)>.Failure("Demo access is disabled.");
+
+        DemoCatalog.DemoAccount? account = DemoCatalog.Find(dto.Account);
+        if (account is null)
+            return Result<(AuthResponseDto, string)>.Failure("Unknown demo account.");
+
+        // Reuse the normal login flow with the seeded demo credentials — the
+        // password never leaves the backend.
+        return await LoginAsync(new LoginDto(account.Email, _demoOptions.Password), ct);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
 
     private static RefreshToken CreateRefreshTokenEntity(Guid userId, string tokenValue) =>
         new()

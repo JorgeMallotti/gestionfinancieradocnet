@@ -1,5 +1,5 @@
+using GestionFinanciera.Application.Common.Results;
 using GestionFinanciera.Application.Features.Dashboard;
-using GestionFinanciera.Domain.Entities;
 using GestionFinanciera.Domain.Enums;
 using GestionFinanciera.UnitTests.Fakes;
 
@@ -8,160 +8,106 @@ namespace GestionFinanciera.UnitTests;
 public sealed class DashboardServiceTests
 {
     private static readonly Guid CompanyId = Guid.NewGuid();
-    private static readonly Guid OtherCompanyId = Guid.NewGuid();
+    private static readonly Guid UserId = Guid.NewGuid();
+    private static readonly Guid OtherUserId = Guid.NewGuid();
 
-    private readonly InMemoryTransactionRepository _repository = new();
+    private readonly InMemoryAccountRepository _accounts = new();
+    private readonly InMemoryMovementRepository _movements = new();
 
-    private DashboardService CreateService() => new(_repository);
+    private DashboardService CreateService() => new(_accounts, _movements);
 
-    private void SeedTransaction(
-        decimal amount, TransactionType type, DateTimeOffset date, Guid? categoryId = null, Guid? companyId = null)
+    // Seeds the caller's account plus a counterpart and movements both ways.
+    private (Guid Mine, Guid Other) SeedAccounts(decimal myBalance = 5000m)
     {
-        Guid category = categoryId ?? Guid.NewGuid();
-        _repository.CategoryNames[category] = "Sales";
-        _repository.Items.Add(new Transaction
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = companyId ?? CompanyId,
-            CategoryId = category,
-            Type = type,
-            Amount = amount,
-            Currency = "EUR",
-            Date = date,
-        });
+        var mine = _accounts.Seed(CompanyId, UserId, "Ana", myBalance);
+        var other = _accounts.Seed(CompanyId, OtherUserId, "Bob", 10_000m);
+        return (mine.Id, other.Id);
     }
 
     // ── Summary ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetSummary_ComputesTotalsAndBalance()
+    public async Task GetMySummary_ComputesIncomingOutgoingAndBalance()
     {
-        var now = DateTimeOffset.UtcNow;
-        SeedTransaction(1000, TransactionType.Income, now);
-        SeedTransaction(400, TransactionType.Expense, now);
-        SeedTransaction(200, TransactionType.Income, now.AddMonths(-1));
+        var (mine, other) = SeedAccounts(myBalance: 5600m);
+        _movements.Seed(CompanyId, other, mine, MovementType.Transfer, 1000m);
+        _movements.Seed(CompanyId, mine, other, MovementType.Transfer, 400m);
 
-        var result = await CreateService().GetSummaryAsync(CompanyId, null, null, CancellationToken.None);
+        var result = await CreateService().GetMySummaryAsync(CompanyId, UserId, null, null, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(1200, result.Value!.TotalIncome);
-        Assert.Equal(400, result.Value.TotalExpenses);
-        Assert.Equal(800, result.Value.Balance);
-        Assert.Equal(3, result.Value.TransactionCount);
+        Assert.Equal(5600m, result.Value!.Balance);
+        Assert.Equal(1000m, result.Value.TotalIncoming);
+        Assert.Equal(400m, result.Value.TotalOutgoing);
+        Assert.Equal(2, result.Value.MovementCount);
     }
 
     [Fact]
-    public async Task GetSummary_IgnoresOtherCompanies()
+    public async Task GetMySummary_UnknownUser_ReturnsNotFound()
     {
-        var now = DateTimeOffset.UtcNow;
-        SeedTransaction(1000, TransactionType.Income, now);
-        SeedTransaction(99999, TransactionType.Income, now, companyId: OtherCompanyId);
+        var result = await CreateService().GetMySummaryAsync(
+            CompanyId, Guid.NewGuid(), null, null, CancellationToken.None);
 
-        var result = await CreateService().GetSummaryAsync(CompanyId, null, null, CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(1000, result.Value!.TotalIncome);
-        Assert.Equal(1, result.Value.TransactionCount);
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorCode.NotFound, result.Code);
     }
 
     [Fact]
-    public async Task GetSummary_RespectsDateRange()
+    public async Task GetMySummary_RespectsDateRange()
     {
-        SeedTransaction(100, TransactionType.Income, new DateTimeOffset(2026, 1, 15, 0, 0, 0, TimeSpan.Zero));
-        SeedTransaction(250, TransactionType.Income, new DateTimeOffset(2026, 2, 10, 0, 0, 0, TimeSpan.Zero));
+        var (mine, other) = SeedAccounts();
+        _movements.Seed(CompanyId, other, mine, MovementType.Transfer, 100m,
+            new DateTimeOffset(2026, 1, 15, 0, 0, 0, TimeSpan.Zero));
+        _movements.Seed(CompanyId, other, mine, MovementType.Transfer, 250m,
+            new DateTimeOffset(2026, 2, 10, 0, 0, 0, TimeSpan.Zero));
+
         var from = new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero);
-
-        var result = await CreateService().GetSummaryAsync(CompanyId, from, null, CancellationToken.None);
+        var result = await CreateService().GetMySummaryAsync(CompanyId, UserId, from, null, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(250, result.Value!.TotalIncome);
-        Assert.Equal(1, result.Value.TransactionCount);
+        Assert.Equal(250m, result.Value!.TotalIncoming);
+        Assert.Equal(1, result.Value.MovementCount);
     }
 
     [Fact]
-    public async Task GetSummary_InvalidRange_Fails()
+    public async Task GetMySummary_InvalidRange_Fails()
     {
+        SeedAccounts();
         var from = new DateTimeOffset(2026, 5, 1, 0, 0, 0, TimeSpan.Zero);
         var to = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var result = await CreateService().GetSummaryAsync(CompanyId, from, to, CancellationToken.None);
+        var result = await CreateService().GetMySummaryAsync(CompanyId, UserId, from, to, CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Contains("after", result.Error);
     }
 
-    // ── Breakdown ─────────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task GetBreakdown_ComputesPercentages()
-    {
-        var sales = Guid.NewGuid();
-        var travel = Guid.NewGuid();
-        _repository.CategoryNames[sales] = "Sales";
-        _repository.CategoryNames[travel] = "Travel";
-
-        _repository.Items.Add(new Transaction
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = CompanyId,
-            CategoryId = sales,
-            Type = TransactionType.Expense,
-            Amount = 300,
-            Date = DateTimeOffset.UtcNow,
-        });
-        _repository.Items.Add(new Transaction
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = CompanyId,
-            CategoryId = travel,
-            Type = TransactionType.Expense,
-            Amount = 100,
-            Date = DateTimeOffset.UtcNow,
-        });
-        // Income must not pollute the expense breakdown.
-        _repository.Items.Add(new Transaction
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = CompanyId,
-            CategoryId = sales,
-            Type = TransactionType.Income,
-            Amount = 999,
-            Date = DateTimeOffset.UtcNow,
-        });
-
-        var result = await CreateService().GetBreakdownAsync(
-            CompanyId, TransactionType.Expense, null, null, CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value!.Count);
-        Assert.Equal("Sales", result.Value[0].CategoryName);
-        Assert.Equal(75, result.Value[0].Percentage);
-        Assert.Equal("Travel", result.Value[1].CategoryName);
-        Assert.Equal(25, result.Value[1].Percentage);
-    }
-
     // ── Monthly ───────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetMonthly_ComputesBalancePerMonth()
+    public async Task GetMyMonthly_ComputesNetPerMonth()
     {
-        SeedTransaction(1000, TransactionType.Income, new DateTimeOffset(2026, 1, 5, 0, 0, 0, TimeSpan.Zero));
-        SeedTransaction(400, TransactionType.Expense, new DateTimeOffset(2026, 1, 20, 0, 0, 0, TimeSpan.Zero));
-        SeedTransaction(2000, TransactionType.Income, new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero));
+        var (mine, other) = SeedAccounts();
+        _movements.Seed(CompanyId, other, mine, MovementType.Transfer, 1000m,
+            new DateTimeOffset(2026, 1, 5, 0, 0, 0, TimeSpan.Zero));
+        _movements.Seed(CompanyId, mine, other, MovementType.Transfer, 400m,
+            new DateTimeOffset(2026, 1, 20, 0, 0, 0, TimeSpan.Zero));
+        _movements.Seed(CompanyId, other, mine, MovementType.Transfer, 2000m,
+            new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero));
 
-        var result = await CreateService().GetMonthlyAsync(CompanyId, null, null, CancellationToken.None);
+        var result = await CreateService().GetMyMonthlyAsync(CompanyId, UserId, null, null, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value!.Count);
 
         Assert.Equal(2026, result.Value[0].Year);
         Assert.Equal(1, result.Value[0].Month);
-        Assert.Equal(1000, result.Value[0].Income);
-        Assert.Equal(400, result.Value[0].Expenses);
-        Assert.Equal(600, result.Value[0].Balance);
+        Assert.Equal(1000m, result.Value[0].Incoming);
+        Assert.Equal(400m, result.Value[0].Outgoing);
+        Assert.Equal(600m, result.Value[0].Net);
 
         Assert.Equal(2, result.Value[1].Month);
-        Assert.Equal(2000, result.Value[1].Income);
-        Assert.Equal(2000, result.Value[1].Balance);
+        Assert.Equal(2000m, result.Value[1].Incoming);
+        Assert.Equal(2000m, result.Value[1].Net);
     }
 }

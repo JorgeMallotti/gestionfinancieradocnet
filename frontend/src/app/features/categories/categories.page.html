@@ -1,7 +1,7 @@
 <div class="categories">
     <header class="page-header">
         <h1>{{ 'categories.title' | translate }}</h1>
-        @if (canMutate()) {
+        @if (isAdmin()) {
         <button mat-raised-button color="primary" (click)="openCreate()">
             <mat-icon>add</mat-icon>
             {{ 'categories.create' | translate }}
@@ -9,50 +9,62 @@
         }
     </header>
 
+    <p class="subtitle">{{ 'categories.catalogHint' | translate }}</p>
+
     @if (loading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
-    <mat-card>
-        <mat-card-content class="table-wrapper">
+    <!-- Handset: card list (no horizontal scroll — AGENTS.md §10) -->
+    @if (isHandsetLayout()) {
+    <div class="card-list">
+        @for (cat of categories(); track cat.id) {
+        <mat-card class="cat-card" (click)="openDetails(cat)">
+            <mat-card-content>
+                <div class="cat-card-main">
+                    <div class="cat-card-left">
+                        <div class="cat-card-name">{{ cat.name }}</div>
+                        @if (cat.description) {
+                        <div class="cat-card-desc">{{ cat.description }}</div>
+                        }
+                    </div>
+                    @if (isAdmin()) {
+                    <mat-icon class="chevron">chevron_right</mat-icon>
+                    }
+                </div>
+            </mat-card-content>
+        </mat-card>
+        } @empty {
+        @if (!loading()) {
+        <p class="empty">{{ 'common.noData' | translate }}</p>
+        }
+        }
+    </div>
+    }
+
+    <!-- Desktop: name column is clickable → details popup -->
+    @if (!isHandsetLayout()) {
+    <mat-card class="table-card">
+        <mat-card-content>
             <table mat-table [dataSource]="categories()">
                 <ng-container matColumnDef="name">
                     <th mat-header-cell *matHeaderCellDef>{{ 'categories.name' | translate }}</th>
-                    <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+                    <td mat-cell *matCellDef="let cat">
+                        <button mat-button class="name-button" (click)="$event.stopPropagation(); openDetails(cat)">
+                            <mat-icon>tag</mat-icon>
+                            {{ cat.name }}
+                        </button>
+                    </td>
                 </ng-container>
 
                 <ng-container matColumnDef="description">
                     <th mat-header-cell *matHeaderCellDef>{{ 'categories.description' | translate }}</th>
-                    <td mat-cell *matCellDef="let row">{{ row.description || ('categories.noDescription' | translate) }}
-                    </td>
+                    <td mat-cell *matCellDef="let cat">{{ cat.description ?? '—' }}</td>
                 </ng-container>
-
-                <ng-container matColumnDef="isDefault">
-                    <th mat-header-cell *matHeaderCellDef>{{ 'categories.isDefault' | translate }}</th>
-                    <td mat-cell *matCellDef="let row">
-                        @if (row.isDefault) {
-                        <mat-chip>{{ 'categories.defaultChip' | translate }}</mat-chip>
-                        }
-                    </td>
-                </ng-container>
-
-                @if (canMutate()) {
-                <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef>{{ 'common.actions' | translate }}</th>
-                    <td mat-cell *matCellDef="let row" class="actions-cell">
-                        <button mat-icon-button (click)="openEdit(row)" [attr.aria-label]="'common.edit' | translate">
-                            <mat-icon>edit</mat-icon>
-                        </button>
-                        <button mat-icon-button color="warn" (click)="confirmDelete(row)" [disabled]="row.isDefault"
-                            [attr.aria-label]="'common.delete' | translate">
-                            <mat-icon>delete</mat-icon>
-                        </button>
-                    </td>
-                </ng-container>
-                }
 
                 <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns()" class="clickable-row"
+                    (click)="openDetails(row)"></tr>
             </table>
 
             @if (categories().length === 0 && !loading()) {
@@ -60,4 +72,5 @@
             }
         </mat-card-content>
     </mat-card>
+    }
 </div>

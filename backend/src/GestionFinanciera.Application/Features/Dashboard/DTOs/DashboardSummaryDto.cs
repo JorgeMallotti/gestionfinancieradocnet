@@ -1,10 +1,10 @@
 namespace GestionFinanciera.Application.Features.Dashboard.DTOs;
 
-/// <summary>Aggregated financial overview for a period.</summary>
+/// <summary>Financial overview of an account for a period (incoming vs outgoing).</summary>
 public sealed record DashboardSummaryDto(
-    decimal TotalIncome,
-    decimal TotalExpenses,
     decimal Balance,
-    int TransactionCount,
+    decimal TotalIncoming,
+    decimal TotalOutgoing,
+    int MovementCount,
     DateTimeOffset? From,
     DateTimeOffset? To);

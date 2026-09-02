@@ -1,0 +1,24 @@
+.transfer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .full-width {
+    width: 100%;
+  }
+
+  .row-fields {
+    display: flex;
+    gap: 12px;
+
+    .amount-field {
+      flex: 1 1 45%;
+      min-width: 120px;
+    }
+
+    .category-field {
+      flex: 1 1 55%;
+      min-width: 160px;
+    }
+  }
+}

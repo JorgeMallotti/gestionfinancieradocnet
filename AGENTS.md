@@ -1,10 +1,14 @@
-# Gestión Financiera Interna — Agent Instructions
+# Gestión Financiera — Bank Demo (Agent Instructions)
 
 Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 
+> Product pivot approved by Jorge on **2026-09-02**: the MVP is a **bank-like demo** — one
+> `Admin` operates as the bank and `User` clients (persons/companies) hold accounts, transfer
+> money between each other, request loans and open claims mediated by the Admin. See §2.1.
+>
 > This file adapts the security best practices from the previous project's AGENTS.md
 > (NestJS/Next.js) to the new stack. Nothing from the old security rules was dropped —
-> each rule was rewritten for .NET/Angular. New sections: Multi-Tenancy, Azure Deployment,
+> each rule was rewritten for .NET/Angular. New sections: Tenancy, Azure Deployment,
 > and Academic Explanation (Jorge learns while building).
 
 ## Table of Contents
@@ -18,7 +22,7 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 | 5   | [Module Convention (.NET Backend)](#5-module-convention-net-backend)                                |
 | 6   | [Module Convention (Angular Frontend)](#6-module-convention-angular-frontend)                       |
 | 7   | [Database Migration Rules (EF Core — Strict)](#7-database-migration-rules-ef-core--strict)          |
-| 8   | [Multi-Tenancy Rules (Multi-Company)](#8-multi-tenancy-rules-multi-company)                         |
+| 8   | [Tenancy Rules (Single Bank — Multitenant-Ready)](#8-tenancy-rules-single-bank--multitenant-ready)  |
 | 9   | [Git Workflow: feat/\* → staging → main](#9-git-workflow-feat--staging--main)                       |
 | 10  | [Styling — Angular Material (Exclusive)](#10-styling--angular-material-exclusive)                   |
 | 11  | [Internationalization (i18n) — @ngx-translate](#11-internationalization-i18n--ngx-translate)        |
@@ -49,29 +53,70 @@ Before writing a single line of code, read:
 
 Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit approval.**
 
-| Decision          | Choice                                                                                               | Why                                                              |
-| ----------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Backend           | **.NET 10 Web API** (modern LTS)                                                                     | Employability in Portugal; modern, supported, corporate standard |
-| Frontend          | **Angular 21** (standalone components) + **Angular Material**                                        | Corporate standard for .NET shops; ready components              |
-| Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod              | Same engine dev/prod (no drift)                                  |
-| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                 | Most requested pattern in .NET job interviews                    |
-| Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                         | "Corporate level" — what real companies ask for                  |
-| Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                          | Secure; fixes the localStorage token debt of the old project     |
-| Roles             | `Admin`, `Finance`, `User` (per company)                                                             | Spec                                                             |
-| Multi-tenancy     | **Full multi-company in the MVP** — `CompanyId` on all business tables, EF Core global query filters | Spec, avoids painful migrations later                            |
-| PDF               | **QuestPDF**                                                                                         | Free for this use case, de-facto standard in .NET                |
-| Excel export      | **ClosedXML**                                                                                        | Free (MIT), standard                                             |
-| Email             | **MailKit** (SMTP) or SendGrid SDK                                                                   | MailKit is the modern standard (SmtpClient is legacy)            |
-| Validation        | **FluentValidation**                                                                                 | Seen in almost every .NET job offer                              |
-| Logging           | **Serilog** + Application Insights (Azure)                                                           | Structured logging, corporate standard                           |
-| API docs          | **Swagger / OpenAPI**                                                                                | Free documentation, testable endpoints                           |
-| Error contract    | **ProblemDetails** (RFC 7807)                                                                        | Standard ASP.NET Core format                                     |
-| Tests             | **xUnit + FluentAssertions** (unit), **WebApplicationFactory** (integration)                         | Corporate standard                                               |
-| CI/CD             | **GitHub Actions** (backend → App Service, frontend → Static Web Apps)                               | Free, standard                                                   |
-| Frontend state    | **Angular Signals + inject-based services**                                                          | Modern Angular idiom (stable since 17, mature in 21)             |
-| i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                          | Community standard, same pattern as old project                  |
-| Language of code  | English everywhere (code, comments, commits, docs)                                                   | Global standard                                                  |
-| Conversation lang | Academic explanations to Jorge in **his language (es/pt)** — technical terms kept in English         | §15                                                              |
+| Decision          | Choice                                                                                                 | Why                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Employability in Portugal; modern, supported, corporate standard |
+| Frontend          | **Angular 21** (standalone components) + **Angular Material**                                          | Corporate standard for .NET shops; ready components              |
+| Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod                | Same engine dev/prod (no drift)                                  |
+| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Most requested pattern in .NET job interviews                    |
+| Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                           | "Corporate level" — what real companies ask for                  |
+| Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                            | Secure; fixes the localStorage token debt of the old project     |
+| Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**         | Bank demo model (Jorge, 2026-09-02)                              |
+| Multi-tenancy     | **Single bank in the MVP** — `CompanyId` kept on all tables + global query filters (multitenant-ready) | Company = the bank; avoids painful migrations later              |
+| PDF               | **QuestPDF**                                                                                           | Free for this use case, de-facto standard in .NET                |
+| Excel export      | **ClosedXML**                                                                                          | Free (MIT), standard                                             |
+| Email             | **MailKit** (SMTP) or SendGrid SDK                                                                     | MailKit is the modern standard (SmtpClient is legacy)            |
+| Validation        | **FluentValidation**                                                                                   | Seen in almost every .NET job offer                              |
+| Logging           | **Serilog** + Application Insights (Azure)                                                             | Structured logging, corporate standard                           |
+| API docs          | **Swagger / OpenAPI**                                                                                  | Free documentation, testable endpoints                           |
+| Error contract    | **ProblemDetails** (RFC 7807)                                                                          | Standard ASP.NET Core format                                     |
+| Tests             | **xUnit + FluentAssertions** (unit), **WebApplicationFactory** (integration)                           | Corporate standard                                               |
+| CI/CD             | **GitHub Actions** (backend → App Service, frontend → Static Web Apps)                                 | Free, standard                                                   |
+| Frontend state    | **Angular Signals + inject-based services**                                                            | Modern Angular idiom (stable since 17, mature in 21)             |
+| i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                            | Community standard, same pattern as old project                  |
+| Language of code  | English everywhere (code, comments, commits, docs)                                                     | Global standard                                                  |
+| Conversation lang | Academic explanations to Jorge in **his language (es/pt)** — technical terms kept in English           | §15                                                              |
+
+### 2.1 Product Model — Bank Demo (LOCKED 2026-09-02)
+
+Approved by Jorge on 2026-09-02 via the decision wizard. **This supersedes the old
+"internal company expense manager" concept.** The MVP is now a **bank-like demo platform**:
+
+- **One bank in the MVP** (a `Company`, seeded once — e.g. "Acme Demo Bank"). The bank owns a
+  **treasury account** with a very high starting balance.
+- **Roles are 2**: `Admin` = bank operator/mediator (approves clients, decides loans, mediates
+  claims) and `User` = **client** (a person or a company with exactly ONE login in the MVP).
+  **`Finance` role is REMOVED.**
+- **Clients are independent entities**: they transfer money **between each other** (P2P) and
+  with the bank. Money moves between different entities — never "inside" one company.
+- **Accounts with balance (wallet)**: every client has one account. **Hard rule: no account can
+  go negative** (nobody spends more than they have). The bank cannot lend more than its treasury.
+- **Immutable ledger (git-style, append-only)**: a movement is created once and **NEVER edited or
+  deleted** — there are NO `PUT`/`DELETE` endpoints for movements. Corrections are **stacked** as
+  new movements (e.g. a corrective transfer), exactly like `git` commits: never rewrite history,
+  always add on top. Every correction is traceable.
+- **Transfers**: any client can pay/receive from another client or the bank without asking
+  permission (like a bank account). Overdrafts are rejected.
+- **Loans (simple, MVP)**: a client requests a loan (amount + reason) → `Admin` approves/rejects →
+  on approval the bank treasury transfers the amount to the client → the client repays anytime
+  (full or partial) with a transfer back. No interest, no deadlines in the MVP.
+- **Claims (reclamaciones)**: if something is wrong with a movement, the involved client opens a
+  claim → `Admin` acts as **mediator** → proposes a **corrective transfer** (e.g. refund the
+  difference) → **the parties consent** → the corrective movement is executed and stacked on the
+  ledger. Nothing is ever overwritten.
+- **Categories**: managed by the `Admin` as a catalog **visible to all clients**; clients may tag
+  movements with a category **optionally** (for their own organization).
+- **Client onboarding**: public registration creates a client account with status `Pending` — the
+  `Admin` must **approve** it before the client can operate. The signup UX must explain this
+  ("wait for Admin approval") and how the Admin approves.
+- **Demo seed**: bank + Admin + **2 demo clients** (e.g. Ana — person, XYZ SL — company) with
+  starting balances, seeded transfers between them, plus one sample loan and one sample claim so
+  visitors can explore every flow with the 1-click demo buttons.
+- **Every client can export their own movements as PDF/Excel** regardless of role (existing
+  `GET /api/reports/pdf|excel`), with a quick-access button on the movements page.
+- **Tenancy**: `CompanyId` is **kept** on all business tables with global query filters
+  (multitenant-ready). In the MVP `Company` = the bank (single seeded row); signup creates a
+  client under that bank, NOT a new company.
 
 ---
 
@@ -126,7 +171,7 @@ backend/
 │   │   └── Properties/launchSettings.json
 │   ├── GestionFinanciera.Application/
 │   │   ├── Features/
-│   │   │   └── {Feature}/          # e.g. Transactions, Categories, Auth, Dashboard, Reports
+│   │   │   └── {Feature}/          # e.g. Auth, Movements(ledger), Transfers, Loans, Claims, Categories, Dashboard, Reports
 │   │   │       ├── DTOs/           # Records: Create/Update/Query/Response
 │   │   │       ├── Validators/     # FluentValidation validators (one per write DTO)
 │   │   │       ├── Interfaces/     # I{Feature}Repository, I{Feature}Service
@@ -137,7 +182,7 @@ backend/
 │   │   │   └── Behaviors/          # (optional) MediatR-style pipelines — do NOT add MediatR without approval
 │   │   └── Abstractions/           # ICurrentTenant, ICurrentUser abstractions
 │   ├── GestionFinanciera.Domain/
-│   │   ├── Entities/               # Company, User, Category, Transaction, AuditLog...
+│   │   ├── Entities/               # Company(bank), ClientAccount, Movement(ledger, append-only), Category, Loan, Claim, AuditLog...
 │   │   ├── Enums/                  # TransactionType, UserRole, AuditAction...
 │   │   ├── ValueObjects/           # Money, DateRange...
 │   │   └── Exceptions/             # DomainException, ValidationException...
@@ -160,22 +205,26 @@ backend/
 
 ```
 frontend/
+├── public/
+│   └── i18n/                        # en.json, es.json, pt.json — @ngx-translate (public/ = web root)
 └── src/
     ├── app/
     │   ├── core/                    # Singleton services: auth, tenant, token refresh, API client, guards, interceptors
     │   ├── features/                # Lazy-loaded feature folders
-    │   │   ├── auth/                # Login, register (company signup)
-    │   │   ├── dashboard/           # Charts, KPI cards
-    │   │   ├── transactions/        # CRUD + list
-    │   │   ├── categories/          # CRUD
-    │   │   ├── reports/             # PDF / Excel export UI
+    │   │   ├── auth/                # Login, register (client account request), demo 1-click buttons
+    │   │   ├── dashboard/           # Balance, charts, KPI cards
+    │   │   ├── movements/           # Immutable movements list: 2 columns (description + amount) → details on click
+    │   │   ├── transfers/           # Send money to another client (P2P)
+    │   │   ├── loans/               # Request a loan; repay partial/full (client) / decide (Admin)
+    │   │   ├── claims/              # Open a claim on a movement; consent to corrective transfer
+    │   │   ├── categories/          # Admin-managed catalog; optional tags on movements
+    │   │   ├── reports/             # PDF / Excel export UI (own movements, any role)
     │   │   ├── audit/               # Audit log viewer (Admin)
-    │   │   └── admin/               # User management per company (Admin)
+    │   │   └── admin/               # Admin panel: approve pending clients, active clients, treasury
     │   ├── shared/                  # Reusable components, pipes, directives, Material config
     │   ├── app.routes.ts            # Routes with lazy loading + guards
     │   ├── app.config.ts            # Providers (HTTP, translate, material)
     │   └── app.component.ts
-    ├── assets/i18n/                 # en.json, es.json, pt.json — @ngx-translate
     ├── environments/                # environment.ts / environment.prod.ts (API base URL)
     └── styles/                      # Material theme (light/dark), global SCSS
 ```
@@ -190,74 +239,84 @@ Every feature follows the same pattern (Contracts → Validation → Service →
 
 ```csharp
 // 1. DTO — contract (record, immutable)
-public sealed record CreateTransactionDto(
-    Guid CategoryId,
-    decimal Amount,
-    string Currency,
-    DateTimeOffset Date,
+public sealed record TransferDto(
+    Guid ToClientId,       // receiver = another client of the same bank
+    decimal Amount,        // > 0, currency default EUR
+    string? CategoryId,    // optional tag from the Admin catalog
     string? Description);
 
 // 2. FluentValidation — defines the API contract rules
-public sealed class CreateTransactionValidator : AbstractValidator<CreateTransactionDto>
+public sealed class TransferValidator : AbstractValidator<TransferDto>
 {
-    public CreateTransactionValidator()
+    public TransferValidator()
     {
         RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Amount must be positive.");
-        RuleFor(x => x.CategoryId).NotEmpty();
-        RuleFor(x => x.Date).NotEmpty();
+        RuleFor(x => x.ToClientId).NotEmpty().NotEqual(Guid.Empty);
         RuleFor(x => x.Description).MaximumLength(500);
     }
 }
 
-// 3. Service — ALL business logic, returns Result<T>
-public interface ITransactionService
+// 3. Service — ALL business logic (balances, ledger), returns Result<T>
+public interface ITransferService
 {
-    Task<Result<TransactionDto>> CreateAsync(
-        CreateTransactionDto dto, Guid companyId, Guid userId, CancellationToken ct);
+    Task<Result<MovementDto>> CreateAsync(
+        TransferDto dto, Guid companyId, Guid fromClientId, CancellationToken ct);
 }
 
-public sealed class TransactionService(
-    ITransactionRepository repository,
-    ICategoryRepository categories) : ITransactionService
+public sealed class TransferService(
+    IAccountRepository accounts,
+    IMovementRepository movements) : ITransferService
 {
-    public async Task<Result<TransactionDto>> CreateAsync(
-        CreateTransactionDto dto, Guid companyId, Guid userId, CancellationToken ct)
+    public async Task<Result<MovementDto>> CreateAsync(
+        TransferDto dto, Guid companyId, Guid fromClientId, CancellationToken ct)
     {
-        // Validate → business rules → persist → return full resource
-        var category = await categories.GetByIdAsync(dto.CategoryId, companyId, ct);
-        if (category is null)
-            return Result<TransactionDto>.Failure("Category does not exist.");
+        // Business rule: the payer can never go negative (overdraft rejected)
+        var payer = await accounts.GetByClientAsync(companyId, fromClientId, ct);
+        if (payer is null)
+            return Result<MovementDto>.Failure(ErrorCode.NotFound, "Account not found.");
 
-        var entity = Transaction.Create(companyId, userId, dto.CategoryId, dto.Amount, dto.Date);
-        var saved = await repository.AddAsync(entity, ct);
-        return Result<TransactionDto>.Success(TransactionDto.FromEntity(saved));
+        if (payer.Balance < dto.Amount)
+            return Result<MovementDto>.Failure(
+                ErrorCode.Conflict, "Insufficient funds — the account cannot go negative.");
+
+        var payee = await accounts.GetByClientAsync(companyId, dto.ToClientId, ct);
+        if (payee is null)
+            return Result<MovementDto>.Failure(ErrorCode.NotFound, "Receiver not found.");
+
+        // Append-only: a movement is created once and never edited/deleted
+        var movement = Movement.CreateTransfer(
+            companyId, fromClientId, dto.ToClientId, dto.Amount, dto.CategoryId, dto.Description);
+
+        var saved = await movements.AddAsync(movement, ct);
+        return Result<MovementDto>.Success(MovementDto.FromEntity(saved));
     }
 }
 
-// 4. Controller — thin, delegates to service
+// 4. Controller — thin, delegates to service (POST/GET only — no PUT/DELETE)
 [ApiController]
-[Route("api/transactions")]
+[Route("api/transfers")]
 [Authorize]
-public sealed class TransactionsController(ITransactionService service) : ControllerBase
+public sealed class TransfersController(ITransferService service) : ControllerBase
 {
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<TransactionDto>> GetById(Guid id, CancellationToken ct)
+    public async Task<ActionResult<MovementDto>> GetById(Guid id, CancellationToken ct)
     {
-        var companyId = User.GetCompanyId(); // extension over JWT claims
-        var result = await service.GetByIdAsync(id, companyId, ct);
-        return result.IsSuccess ? Ok(result.Value) : NotFound();
+        var companyId = User.GetCompanyId();
+        var clientId = User.GetUserId(); // a client's own movements only
+        var result = await service.GetByIdAsync(id, companyId, clientId, ct);
+        return this.ToActionResult(result);
     }
 
     [HttpPost]
-    public async Task<ActionResult<TransactionDto>> Create(
-        CreateTransactionDto dto, CancellationToken ct)
+    public async Task<ActionResult<MovementDto>> Create(TransferDto dto, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
-        var userId = User.GetUserId();
-        var result = await service.CreateAsync(dto, companyId, userId, ct);
+        var clientId = User.GetUserId();
+        var result = await service.CreateAsync(dto, companyId, clientId, ct);
+
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value)
-            : BadRequest(new ProblemDetails { Detail = result.Error });
+            : this.ToActionResult(result);
     }
 }
 ```
@@ -281,18 +340,18 @@ public sealed class TransactionsController(ITransactionService service) : Contro
 - Feature folder shape:
 
 ```
-features/transactions/
-├── transactions.routes.ts        # Lazy routes
+features/movements/
+├── movements.routes.ts          # Lazy routes
 ├── pages/
-│   ├── transaction-list.page.ts  # MatTable + filters + pagination
-│   └── transaction-form.page.ts  # Reactive form (MatFormField), create/edit
+│   ├── movement-list.page.ts    # List: 2 columns (description + amount), click → details
+│   └── movement-detail.page.ts  # Read-only details (movements are immutable)
 └── services/
-    └── transactions.service.ts   # Typed HTTP calls to the API client
+    └── movements.service.ts     # Typed HTTP calls to the API client
 ```
 
 - **Data flows one way**: components → services (injectable) → `HttpClient` → API.
 - Components contain **zero business logic** — only presentation and event handling.
-- Typed responses: define `TransactionDto` interfaces in `app/shared/models/` mirroring
+- Typed responses: define `MovementDto` interfaces in `app/shared/models/` mirroring
   the backend DTOs (or use OpenAPI-generated client if approved).
 
 ---
@@ -322,30 +381,35 @@ project's forbidden `prisma db push`).
 
 ---
 
-## 8. Multi-Tenancy Rules (Multi-Company)
+## 8. Tenancy Rules (Single Bank — Multitenant-Ready)
 
-This is a **multi-tenant** system: every business record belongs to a company.
+Since 2026-09-02 the product is a **bank demo**: a `Company` row represents **the bank** (one
+seeded instance in the MVP). Every record still belongs to the bank via `CompanyId` so the schema
+is ready for multiple banks later without migrations.
 
 **Hard rules:**
 
-- Every business entity carries `CompanyId` (`UNIQUEIDENTIFIER`, non-nullable):
-  `Category`, `Transaction`, `AuditLog`, `Report`... `User` belongs to exactly one company.
-- **Tenant resolution**: `CompanyId` comes ONLY from the JWT claim (`company_id`) —
-  **never** from URL, query string, or request body.
-- **EF Core global query filter** on every business entity enforces isolation
-  automatically — a query can never leak another company's rows:
+- Every business entity carries `CompanyId` (`UNIQUEIDENTIFIER`, non-nullable): `Category`,
+  `Movement`, `Loan`, `Claim`, `AuditLog`... `ClientAccount` and `ApplicationUser` belong to the bank.
+- **Tenant resolution**: `CompanyId` comes ONLY from the JWT claim (`company_id`) — **never** from
+  URL, query string, or request body.
+- **EF Core global query filter** on every business entity enforces isolation automatically — a
+  query can never leak another bank's rows:
 
 ```csharp
-modelBuilder.Entity<Transaction>()
-    .HasQueryFilter(t => t.CompanyId == _tenantProvider.CompanyId);
+modelBuilder.Entity<Movement>()
+    .HasQueryFilter(m => m.CompanyId == _tenantProvider.CompanyId);
 ```
 
 - Repositories receive `companyId` as a parameter and include it in every `Where`.
 - Cross-tenant access attempts must return `404` (not `403`) to avoid leaking existence.
-- `Admin` manages users **within their own company only**.
-- A new company is created on registration (first user becomes its `Admin`).
-- Creating a company is the ONLY place a `CompanyId` may be minted from the client
-  (via the signup flow) — all other flows derive it from the token.
+- The bank (`Company`) is **seeded once** by the demo seeder (e.g. "Acme Demo Bank") together with
+  its treasury account and the initial `Admin` user.
+- **Registration no longer creates a company.** Signup creates a **client account** (role `User`,
+  status `Pending`) under the existing bank; the bank `Admin` approves it before it can operate.
+- Clients may only read/write their **own** account and movements. A client can target another
+  client **only as transfer counterparty** (the receiver's balance is credited) — never read or
+  modify another client's data.
 
 ---
 
@@ -370,7 +434,7 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 - **NEVER** commit directly to `main` or `staging`.
 - **NEVER** merge your own PRs — always request a review.
 - Branch naming: `feat/add-auth-module`, `fix/login-validation-error`,
-  `refactor/transactions-service`, `chore/update-dependencies`, `docs/api-readme`.
+  `refactor/transfers-service`, `chore/update-dependencies`, `docs/api-readme`.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/):
   `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`, `style:`.
 - Before opening a PR to `staging`:
@@ -422,8 +486,8 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 
 - **ALL** user-facing text comes from `@ngx-translate` — **NEVER** hardcoded strings in
   templates or components.
-- Translation files: `frontend/src/assets/i18n/{en,es,pt}.json` — **flat or nested JSON,
-  same shape in every language**.
+- Translation files: `frontend/public/i18n/{en,es,pt}.json` — **flat or nested JSON,
+  same shape in every language**. (Web root is `public/` in Angular 21/Vite — never `src/assets`.)
 - All three files MUST stay in sync: adding a key to one without the others is an error.
 - Default language: `en`. Detection: stored language preference → `Accept-Language` →
   `en`.
@@ -431,7 +495,7 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 ```json
 // en.json
 {
-  "nav": { "dashboard": "Dashboard", "transactions": "Transactions" },
+  "nav": { "dashboard": "Dashboard", "movements": "Movements" },
   "common": { "save": "Save", "cancel": "Cancel", "loading": "Loading..." }
 }
 ```
@@ -459,9 +523,9 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 **NEVER refetch data after a successful mutation — update local state directly.**
 
 ```
-❌ BAD:  create → POST /transactions → wait → GET /transactions (refetch all) → render
-✅ GOOD: create → POST /transactions → append response to signal/list → render (instant)
-✅ BEST: delete → remove from list instantly → DELETE /transactions/:id → rollback on error
+❌ BAD:  transfer → POST /transfers → wait → GET /movements (refetch all) → render
+✅ GOOD: transfer → POST /transfers → append response to signal/list → render (instant)
+✅ BEST: delete a category → remove from list instantly → DELETE /categories/:id → rollback on error
 ```
 
 | Operation              | Frontend Behavior                         | Backend Requirement                   |
@@ -470,6 +534,9 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 | **Update (PUT/PATCH)** | Replace item with returned resource       | `200` + full resource                 |
 | **Delete (DELETE)**    | Remove item immediately, rollback on fail | `200`/`204`                           |
 | **Error (any)**        | Rollback to previous state + toast        | ProblemDetails with readable `detail` |
+
+> **Ledger exception**: movements are append-only — there is NO delete/update on the ledger.
+> Those rows apply to mutable resources only (categories, clients, loans, claims).
 
 - Frontend state: **Angular Signals** (`signal`, `computed`, `update`) for component and
   simple shared state; services hold state for global data (auth, tenant).
@@ -500,11 +567,15 @@ every endpoint:
 
 ### Authorization (RBAC)
 
-- Roles: `Admin`, `Finance`, `User` (per company).
+- Roles: `Admin` (bank operator/mediator) and `User` (client). `Finance` was removed on 2026-09-02.
 - Default policy: `[Authorize]` on every controller. Explicit `[Authorize(Roles = "Admin")]`
-  for admin-only endpoints (user management, audit log, company settings).
-- `Finance` and `User` restrictions are enforced **in the service layer** (business rules),
-  not only at the HTTP layer.
+  for bank-only endpoints (approve clients, decide loans, mediate claims, audit log, categories
+  management, treasury).
+- **Movements are immutable**: there are NO update/delete endpoints for movements in the API —
+  corrections happen by stacking a new movement (corrective transfer) after consent.
+- Client (`User`) restrictions are enforced **in the service layer** (business rules:
+  account ownership, balance never negative, bank never lends more than its treasury), not only
+  at the HTTP layer.
 - **Deny by default** — new endpoints start locked; only public ones are
   `[AllowAnonymous]` (login, register, refresh, health).
 
@@ -558,9 +629,10 @@ every endpoint:
 
 ### Audit Trail
 
-- Every **create / update / delete** of sensitive data (transactions, categories, users,
-  roles) writes an `AuditLog` row: `CompanyId`, `UserId`, `Action`, `Entity`, `EntityId`,
-  `Before`/`After` (JSON), `Timestamp`, `IpAddress`.
+- Every **create** of a movement and every **create / update / delete** of sensitive data
+  (client accounts, categories, loans, claims, users) writes an `AuditLog` row: `CompanyId`,
+  `UserId`, `Action`, `Entity`, `EntityId`, `Before`/`After` (JSON), `Timestamp`, `IpAddress`.
+  Movements are append-only, so they only ever get an `AuditAction.Create` entry.
 - Implemented as a service-level concern (explicit calls in services) or a global
   middleware — approved approach: explicit service calls + an HTTP middleware for
   request metadata (IP).
@@ -569,9 +641,10 @@ every endpoint:
 ### Endpoint Design
 
 - **Never put user IDs or company IDs in URLs for your own resources.**
-  Use dedicated endpoints scoped by the token: `GET /api/transactions`,
-  `GET /api/transactions/my` style. Admin acting on a specific user may use
-  `/api/admin/users/{userId}` — the admin's own identity still comes from the JWT.
+  Use dedicated endpoints scoped by the token: `GET /api/movements`,
+  `GET /api/movements/my` style. Admin acting on a specific client may use
+  `/api/admin/clients/{clientId}` — the admin's own identity still comes from the JWT.
+- **Movement endpoints are POST/GET only** — no `PUT`/`DELETE` for ledger entries (§2.1).
 
 ---
 
@@ -724,7 +797,7 @@ Step 6 — Document
 - Every service method has a unit test; every validator has tests (valid/invalid cases).
 - Every controller endpoint has an integration test via `WebApplicationFactory`
   (with Testcontainers SQL Server or the local Docker SQL).
-- Test files co-located: `TransactionService.cs` → `TransactionServiceTests.cs`.
+- Test files co-located: `TransferService.cs` → `TransferServiceTests.cs`.
 - xUnit + FluentAssertions; `Microsoft.AspNetCore.Mvc.Testing` for integration.
 
 ### General
@@ -753,7 +826,7 @@ The agent MUST request explicit permission before modifying:
 - `Program.cs` (composition root) — only with approval
 - `angular.json`, `tsconfig*.json` — only with approval
 - `.gitignore` — only with approval
-- `frontend/src/assets/i18n/*.json` — **keep all languages in sync**; never delete a key
+- `frontend/public/i18n/*.json` — **keep all languages in sync**; never delete a key
   from one language without updating the others
 
 ---

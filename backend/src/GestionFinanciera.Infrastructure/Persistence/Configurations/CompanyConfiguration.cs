@@ -16,5 +16,10 @@ public sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.Name)
             .HasMaxLength(100)
             .IsRequired();
+
+        builder.HasMany(c => c.ClientAccounts)
+            .WithOne(a => a.Company)
+            .HasForeignKey(a => a.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
