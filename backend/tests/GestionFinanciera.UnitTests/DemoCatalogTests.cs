@@ -5,11 +5,12 @@ namespace GestionFinanciera.UnitTests;
 public sealed class DemoCatalogTests
 {
     [Fact]
-    public void Accounts_HasThreeRoles_AdminFinanceUser()
+    public void Accounts_HasBankOperatorAndTwoClients()
     {
         Assert.Equal(3, DemoCatalog.Accounts.Count);
-        Assert.Equal(["admin", "finance", "user"], DemoCatalog.Accounts.Select(a => a.Key));
-        Assert.Equal(["Admin", "Finance", "User"], DemoCatalog.Accounts.Select(a => a.Role));
+        Assert.Equal(["admin", "ana", "xyz"], DemoCatalog.Accounts.Select(a => a.Key));
+        Assert.Equal(["Admin", "User", "User"], DemoCatalog.Accounts.Select(a => a.Role));
+        Assert.All(DemoCatalog.Accounts, a => Assert.Equal("Acme Demo Bank", a.ToDto().CompanyName));
     }
 
     [Fact]
@@ -33,12 +34,14 @@ public sealed class DemoCatalogTests
     public void Find_IsCaseInsensitive()
     {
         Assert.NotNull(DemoCatalog.Find("ADMIN"));
-        Assert.NotNull(DemoCatalog.Find("Finance"));
+        Assert.NotNull(DemoCatalog.Find("Ana"));
+        Assert.NotNull(DemoCatalog.Find("XYZ"));
     }
 
     [Fact]
     public void Find_UnknownKey_ReturnsNull()
     {
+        Assert.Null(DemoCatalog.Find("finance")); // the Finance role is gone
         Assert.Null(DemoCatalog.Find("nope"));
     }
 

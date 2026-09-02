@@ -1,5 +1,6 @@
 using System.Text;
 
+using GestionFinanciera.Application.Features.Movements.DTOs;
 using GestionFinanciera.Application.Features.Reports.DTOs;
 using GestionFinanciera.Domain.Enums;
 using GestionFinanciera.Infrastructure.Services;
@@ -14,24 +15,28 @@ public sealed class PdfServiceTests
 {
     private static ReportDataDto SampleData(int count = 2) =>
         new(
-            "Acme S.L.",
+            "Acme Demo Bank",
+            "Ana García",
             Enumerable.Range(1, count)
-                .Select(i => new GestionFinanciera.Application.Features.Transactions.DTOs.TransactionDto(
+                .Select(i => new MovementDto(
                     Guid.NewGuid(),
+                    MovementType.Transfer,
                     Guid.NewGuid(),
-                    i % 2 == 0 ? "Sales" : "Travel",
-                    i % 2 == 0 ? TransactionType.Income : TransactionType.Expense,
+                    i % 2 == 0 ? "XYZ Solutions SL" : "Acme Demo Bank",
+                    Guid.NewGuid(),
+                    "Ana García",
                     100m * i,
                     "EUR",
-                    new DateTimeOffset(2026, 8, i, 10, 0, 0, TimeSpan.Zero),
+                    null,
+                    null,
                     $"Description {i}",
-                    Guid.NewGuid(),
-                    DateTimeOffset.UtcNow))
+                    null,
+                    new DateTimeOffset(2026, 8, i, 10, 0, 0, TimeSpan.Zero)))
                 .ToList(),
-            TotalIncome: 200m,
-            TotalExpenses: 100m,
-            From: null,
-            To: null);
+            200m,
+            100m,
+            null,
+            null);
 
     [Fact]
     public async Task GenerateAsync_ProducesValidPdf()
@@ -46,7 +51,7 @@ public sealed class PdfServiceTests
     }
 
     [Fact]
-    public async Task GenerateAsync_EmptyTransactions_StillProducesValidPdf()
+    public async Task GenerateAsync_EmptyMovements_StillProducesValidPdf()
     {
         var service = new PdfService();
 

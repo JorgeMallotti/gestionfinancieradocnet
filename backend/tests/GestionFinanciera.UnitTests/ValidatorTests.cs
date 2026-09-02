@@ -4,9 +4,12 @@ using GestionFinanciera.Application.Features.Auth.DTOs;
 using GestionFinanciera.Application.Features.Auth.Validators;
 using GestionFinanciera.Application.Features.Categories.DTOs;
 using GestionFinanciera.Application.Features.Categories.Validators;
-using GestionFinanciera.Application.Features.Transactions.DTOs;
-using GestionFinanciera.Application.Features.Transactions.Validators;
-using GestionFinanciera.Domain.Enums;
+using GestionFinanciera.Application.Features.Claims.DTOs;
+using GestionFinanciera.Application.Features.Claims.Validators;
+using GestionFinanciera.Application.Features.Loans.DTOs;
+using GestionFinanciera.Application.Features.Loans.Validators;
+using GestionFinanciera.Application.Features.Movements.DTOs;
+using GestionFinanciera.Application.Features.Movements.Validators;
 
 namespace GestionFinanciera.UnitTests;
 
@@ -81,15 +84,15 @@ public sealed class CategoryValidatorTests
     }
 }
 
-public sealed class TransactionValidatorTests
+public sealed class TransferValidatorTests
 {
-    private readonly CreateTransactionValidator _validator = new();
+    private readonly TransferValidator _validator = new();
 
-    private static CreateTransactionDto ValidDto() =>
-        new(Guid.NewGuid(), TransactionType.Income, 100, "EUR", DateTimeOffset.UtcNow, "Payment");
+    private static TransferDto ValidDto() =>
+        new(Guid.NewGuid(), 100m, Guid.NewGuid(), "Payment");
 
     [Fact]
-    public async Task CreateTransaction_Valid_HasNoErrors()
+    public async Task Transfer_Valid_HasNoErrors()
     {
         var result = await _validator.ValidateAsync(ValidDto());
 
@@ -97,7 +100,7 @@ public sealed class TransactionValidatorTests
     }
 
     [Fact]
-    public async Task CreateTransaction_ZeroAmount_HasError()
+    public async Task Transfer_ZeroAmount_HasError()
     {
         var result = await _validator.ValidateAsync(ValidDto() with { Amount = 0 });
 
@@ -106,52 +109,139 @@ public sealed class TransactionValidatorTests
     }
 
     [Fact]
-    public async Task CreateTransaction_LowercaseCurrency_HasError()
+    public async Task Transfer_NegativeAmount_HasError()
     {
-        var result = await _validator.ValidateAsync(ValidDto() with { Currency = "eur" });
+        var result = await _validator.ValidateAsync(ValidDto() with { Amount = -5 });
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == "Currency");
+        Assert.Contains(result.Errors, e => e.PropertyName == "Amount");
     }
 
     [Fact]
-    public async Task CreateTransaction_EmptyCategory_HasError()
+    public async Task Transfer_EmptyReceiver_HasError()
     {
-        var result = await _validator.ValidateAsync(ValidDto() with { CategoryId = Guid.Empty });
+        var result = await _validator.ValidateAsync(ValidDto() with { ToAccountId = Guid.Empty });
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == "CategoryId");
+        Assert.Contains(result.Errors, e => e.PropertyName == "ToAccountId");
     }
 
     [Fact]
-    public async Task CreateTransaction_TooLongDescription_HasError()
+    public async Task Transfer_TooLongDescription_HasError()
     {
-        var result = await _validator.ValidateAsync(ValidDto() with { Description = new string('a', 501) });
+        var result = await _validator.ValidateAsync(ValidDto() with { Description = new string('a', 201) });
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == "Description");
     }
 }
 
-public sealed class UpdateTransactionValidatorTests
+public sealed class RequestLoanValidatorTests
 {
-    private readonly UpdateTransactionValidator _validator = new();
+    private readonly RequestLoanValidator _validator = new();
 
     [Fact]
-    public async Task UpdateTransaction_Valid_HasNoErrors()
+    public async Task RequestLoan_Valid_HasNoErrors()
     {
-        var result = await _validator.ValidateAsync(new UpdateTransactionDto(
-            Guid.NewGuid(), TransactionType.Expense, 50, "USD", DateTimeOffset.UtcNow, null));
+        var result = await _validator.ValidateAsync(new RequestLoanDto(5000m, "Working capital"));
 
         Assert.True(result.IsValid);
     }
 
     [Fact]
-    public async Task UpdateTransaction_NegativeAmount_HasError()
+    public async Task RequestLoan_ZeroAmount_HasError()
     {
-        var result = await _validator.ValidateAsync(new UpdateTransactionDto(
-            Guid.NewGuid(), TransactionType.Expense, -5, "EUR", DateTimeOffset.UtcNow, null));
+        var result = await _validator.ValidateAsync(new RequestLoanDto(0m, "Working capital"));
 
         Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Amount");
+    }
+
+    [Fact]
+    public async Task RequestLoan_EmptyReason_HasError()
+    {
+        var result = await _validator.ValidateAsync(new RequestLoanDto(100m, " "));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Reason");
+    }
+}
+
+public sealed class RepayLoanValidatorTests
+{
+    private readonly RepayLoanValidator _validator = new();
+
+    [Fact]
+    public async Task RepayLoan_Valid_HasNoErrors()
+    {
+        var result = await _validator.ValidateAsync(new RepayLoanDto(100m));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task RepayLoan_NegativeAmount_HasError()
+    {
+        var result = await _validator.ValidateAsync(new RepayLoanDto(-5m));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Amount");
+    }
+}
+
+public sealed class OpenClaimValidatorTests
+{
+    private readonly OpenClaimValidator _validator = new();
+
+    [Fact]
+    public async Task OpenClaim_Valid_HasNoErrors()
+    {
+        var result = await _validator.ValidateAsync(new OpenClaimDto(Guid.NewGuid(), "Wrong amount"));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task OpenClaim_EmptyReason_HasError()
+    {
+        var result = await _validator.ValidateAsync(new OpenClaimDto(Guid.NewGuid(), " "));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Reason");
+    }
+}
+
+public sealed class ProposeCorrectionValidatorTests
+{
+    private readonly ProposeCorrectionValidator _validator = new();
+
+    private static ProposeCorrectionDto ValidDto() =>
+        new(200m, Guid.NewGuid(), Guid.NewGuid(), "Refund");
+
+    [Fact]
+    public async Task Propose_Valid_HasNoErrors()
+    {
+        var result = await _validator.ValidateAsync(ValidDto());
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Propose_ZeroAmount_HasError()
+    {
+        var result = await _validator.ValidateAsync(ValidDto() with { Amount = 0 });
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Amount");
+    }
+
+    [Fact]
+    public async Task Propose_SameAccounts_HasError()
+    {
+        var account = Guid.NewGuid();
+        var result = await _validator.ValidateAsync(new ProposeCorrectionDto(100m, account, account, null));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "ToAccountId");
     }
 }
