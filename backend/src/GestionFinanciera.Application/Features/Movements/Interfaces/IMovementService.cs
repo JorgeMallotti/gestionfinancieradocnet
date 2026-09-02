@@ -14,11 +14,11 @@ public interface IMovementService
     Task<Result<MovementDto>> TransferAsync(
         TransferDto dto, Guid companyId, Guid fromUserId, CancellationToken ct);
 
-    /// <summary>Paginated ledger of the caller's account (incoming + outgoing).</summary>
+    /// <summary>Paginated ledger of the caller's own account (incoming + outgoing).</summary>
     Task<Result<PagedResult<MovementDto>>> GetMyMovementsAsync(
-        Guid companyId, Guid accountId, MovementQueryDto query, CancellationToken ct);
+        Guid companyId, Guid userId, MovementQueryDto query, CancellationToken ct);
 
     /// <summary>One movement — must involve the caller's account (Admin sees any).</summary>
     Task<Result<MovementDto>> GetByIdAsync(
-        Guid id, Guid companyId, Guid accountId, string role, CancellationToken ct);
+        Guid id, Guid companyId, Guid userId, string role, CancellationToken ct);
 }

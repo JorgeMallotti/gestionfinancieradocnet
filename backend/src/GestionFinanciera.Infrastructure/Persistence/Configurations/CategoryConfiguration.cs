@@ -20,7 +20,7 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.Description)
             .HasMaxLength(500);
 
-        // One company cannot have two categories with the same name.
+        // One bank cannot have two categories with the same name.
         builder.HasIndex(c => new { c.CompanyId, c.Name })
             .IsUnique();
 
@@ -28,5 +28,10 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .WithMany(c => c.Categories)
             .HasForeignKey(c => c.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(c => c.Movements)
+            .WithOne(m => m.Category)
+            .HasForeignKey(m => m.CategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

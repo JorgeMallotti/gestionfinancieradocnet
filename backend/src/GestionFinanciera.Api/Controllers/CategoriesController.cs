@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestionFinanciera.Api.Controllers;
 
 /// <summary>
-/// Category endpoints. Mutations are restricted to Admin/Finance both here (HTTP)
-/// and in the service layer (business rule). Identity always comes from the JWT.
+/// Category endpoints (Admin-managed catalog, visible to all clients).
+/// Mutations are Admin-only both here (HTTP) and in the service layer.
 /// </summary>
 [ApiController]
 [Route("api/categories")]
@@ -45,7 +45,7 @@ public sealed class CategoriesController(ICategoryService service) : ControllerB
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CategoryDto>> Create(CreateCategoryDto dto, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
@@ -61,7 +61,7 @@ public sealed class CategoriesController(ICategoryService service) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CategoryDto>> Update(Guid id, UpdateCategoryDto dto, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
@@ -73,7 +73,7 @@ public sealed class CategoriesController(ICategoryService service) : ControllerB
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();

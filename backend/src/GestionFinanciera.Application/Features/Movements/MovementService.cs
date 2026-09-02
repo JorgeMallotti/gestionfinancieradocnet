@@ -88,24 +88,35 @@ public sealed class MovementService(
     }
 
     public async Task<Result<PagedResult<MovementDto>>> GetMyMovementsAsync(
-        Guid companyId, Guid accountId, MovementQueryDto query, CancellationToken ct)
+        Guid companyId, Guid userId, MovementQueryDto query, CancellationToken ct)
     {
-        var result = await movements.GetByAccountAsync(companyId, accountId, query, ct);
+        var mine = await accounts.GetByOwnerUserIdAsync(companyId, userId, ct);
+        if (mine is null)
+            return Result<PagedResult<MovementDto>>.Failure(ErrorCode.NotFound, "No account is linked to this user.");
+
+        var result = await movements.GetByAccountAsync(companyId, mine.Id, query, ct);
         var items = result.Items.Select(MovementDto.FromEntity).ToList();
         return Result<PagedResult<MovementDto>>.Success(
             new PagedResult<MovementDto>(items, result.TotalCount, result.Page, result.PageSize));
     }
 
     public async Task<Result<MovementDto>> GetByIdAsync(
-        Guid id, Guid companyId, Guid accountId, string role, CancellationToken ct)
+        Guid id, Guid companyId, Guid userId, string role, CancellationToken ct)
     {
         var movement = await movements.GetByIdAsync(id, companyId, ct);
         if (movement is null)
             return Result<MovementDto>.Failure(ErrorCode.NotFound, "Movement not found.");
 
-        bool isInvolved = movement.FromAccountId == accountId || movement.ToAccountId == accountId;
         bool isAdmin = role == nameof(UserRole.Admin);
-        if (!isInvolved && !isAdmin)
+        if (isAdmin)
+            return Result<MovementDto>.Success(MovementDto.FromEntity(movement));
+
+        var mine = await accounts.GetByOwnerUserIdAsync(companyId, userId, ct);
+        if (mine is null)
+            return Result<MovementDto>.Failure(ErrorCode.NotFound, "No account is linked to this user.");
+
+        bool isInvolved = movement.FromAccountId == mine.Id || movement.ToAccountId == mine.Id;
+        if (!isInvolved)
             return Result<MovementDto>.Failure(ErrorCode.Forbidden, "You cannot view this movement.");
 
         return Result<MovementDto>.Success(MovementDto.FromEntity(movement));

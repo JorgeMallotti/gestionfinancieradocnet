@@ -11,12 +11,13 @@ using Microsoft.Extensions.Options;
 namespace GestionFinanciera.Infrastructure.Persistence;
 
 /// <summary>
-/// Seeds the demo company, its three role users (Admin/Finance/User) and a
-/// realistic sample dataset so the MVP demo works with one click.
+/// Seeds the single demo BANK (Acme Demo Bank) with its operator Admin and two
+/// demo clients — Ana (person) and XYZ Solutions SL (company) — so the MVP demo
+/// works with one click: P2P transfers, loans and claims are all explorable.
 ///
 /// Idempotent: safe to run on every startup. No-op when Demo:Enabled=false.
-/// Runs with NO tenant (no request context), so the multi-tenant query
-/// filters are neutral (they only apply when a CompanyId is present).
+/// Runs with NO tenant (no request context), so the multi-tenant query filters
+/// are neutral (they only apply when a CompanyId is present).
 /// </summary>
 public sealed class DemoSeeder(
     UserManager<ApplicationUser> userManager,
@@ -27,66 +28,36 @@ public sealed class DemoSeeder(
 {
     private readonly DemoOptions _options = demoOptions.Value;
 
-    private static readonly (string Name, string Description)[] DefaultCategories =
+    /// <summary>Seed values per demo account key: display name + starting balance.</summary>
+    private static readonly Dictionary<string, (string DisplayName, ClientKind Kind, decimal StartBalance, bool IsTreasury)> AccountSeeds =
+        new()
+        {
+            // The bank operator owns the treasury (one account per user, uniform).
+            ["admin"] = ("Acme Demo Bank Treasury", ClientKind.Company, 1_000_000m, true),
+            ["ana"] = ("Ana García", ClientKind.Person, 5_000m, false),
+            ["xyz"] = ("XYZ Solutions SL", ClientKind.Company, 12_000m, false),
+        };
+
+    /// <summary>Bank-managed category catalog (visible to every client, optional tag).</summary>
+    private static readonly (string Name, string Description)[] BankCategories =
     [
-        ("Marketing", "Marketing and advertising expenses"),
-        ("Sales", "Revenue from sales"),
-        ("Operations", "Operational costs"),
+        ("Salary", "Income from work or contracts"),
+        ("Shopping", "Purchases of goods"),
+        ("Services", "Paid services and subscriptions"),
+        ("Food", "Restaurants and groceries"),
+        ("Utilities", "Bills and basic services"),
     ];
 
-    /// <summary>12 sample movements spread over the last 3 months (4/month).</summary>
-    private static readonly (string Category, TransactionType Type, decimal Amount, string Description)[] SampleTransactions =
+    /// <summary>P2P transfers between the two demo clients (ledger examples).</summary>
+    private static readonly (string FromKey, string ToKey, decimal Amount, string Category, string Description)[] SampleTransfers =
     [
-        ("Sales", TransactionType.Income, 4800m, "Q3 client onboarding"),
-        ("Marketing", TransactionType.Expense, 1250m, "Google Ads campaign"),
-        ("Sales", TransactionType.Income, 3150m, "Consulting services"),
-        ("Operations", TransactionType.Expense, 780m, "Office supplies"),
-        ("Sales", TransactionType.Income, 5200m, "Annual contract renewal"),
-        ("Marketing", TransactionType.Expense, 940m, "Social media ads"),
-        ("Operations", TransactionType.Expense, 1120m, "Software subscriptions"),
-        ("Sales", TransactionType.Income, 2750m, "Training workshop"),
-        ("Marketing", TransactionType.Expense, 1580m, "Trade fair booth"),
-        ("Operations", TransactionType.Expense, 640m, "Utilities"),
-        ("Sales", TransactionType.Income, 6900m, "Enterprise license"),
-        ("Operations", TransactionType.Expense, 850m, "Equipment maintenance"),
+        ("ana", "xyz", 1_200m, "Services", "Web design retainer — Q3"),
+        ("xyz", "ana", 2_400m, "Salary", "Monthly salary — Ana"),
+        ("ana", "xyz", 350m, "Shopping", "Office supplies from Ana's shop"),
+        ("xyz", "ana", 800m, "Services", "Consulting — tax advisory"),
+        ("ana", "xyz", 150m, "Food", "Team lunch reimbursement"),
+        ("xyz", "ana", 2_400m, "Salary", "Monthly salary — Ana"),
     ];
-
-    /// <summary>
-    /// Wipes the demo company's business data (audit trail, transactions and
-    /// categories) and re-seeds the sample dataset. The demo users and the
-    /// company itself are kept so the one-click logins keep working.
-    /// Scoped to the demo company only — real companies are never touched.
-    /// </summary>
-    public async Task ResetDemoDataAsync(CancellationToken ct)
-    {
-        if (!_options.Enabled)
-        {
-            logger.LogInformation("Demo reset skipped (Demo:Enabled=false).");
-            return;
-        }
-
-        Company? company = await dbContext.Companies
-            .SingleOrDefaultAsync(c => c.Name == DemoCatalog.CompanyName, ct);
-
-        if (company is null)
-        {
-            logger.LogInformation("Demo reset skipped (demo company not found).");
-            return;
-        }
-
-        logger.LogInformation("Resetting demo data for company {CompanyId}...", company.Id);
-
-        // Delete order matters: transactions reference categories (FK).
-        // Runs outside a request, so the tenant query filters are neutral and
-        // the explicit CompanyId filters scope the deletes to the demo company.
-        await dbContext.AuditLogs.Where(a => a.CompanyId == company.Id).ExecuteDeleteAsync(ct);
-        await dbContext.Transactions.Where(t => t.CompanyId == company.Id).ExecuteDeleteAsync(ct);
-        await dbContext.Categories.Where(c => c.CompanyId == company.Id).ExecuteDeleteAsync(ct);
-
-        await SeedSampleDataAsync(company.Id, ct, force: true);
-
-        logger.LogInformation("Demo data reset completed for company {CompanyId}.", company.Id);
-    }
 
     public async Task SeedAsync(CancellationToken ct)
     {
@@ -107,6 +78,64 @@ public sealed class DemoSeeder(
         await SeedSampleDataAsync(company.Id, ct);
 
         logger.LogInformation("Demo seeding completed for company {CompanyId}", company.Id);
+    }
+
+    /// <summary>
+    /// Wipes the demo bank's mutable demo data (audit trail, movements, loans,
+    /// claims) and re-seeds the sample dataset. Demo users, their accounts and
+    /// the starting balances are restored so the one-click logins keep working.
+    /// Scoped to the demo company only — real banks/clients are never touched.
+    /// </summary>
+    public async Task ResetDemoDataAsync(CancellationToken ct)
+    {
+        if (!_options.Enabled)
+        {
+            logger.LogInformation("Demo reset skipped (Demo:Enabled=false).");
+            return;
+        }
+
+        Company? company = await dbContext.Companies
+            .SingleOrDefaultAsync(c => c.Name == DemoCatalog.CompanyName, ct);
+
+        if (company is null)
+        {
+            logger.LogInformation("Demo reset skipped (demo company not found).");
+            return;
+        }
+
+        logger.LogInformation("Resetting demo data for company {CompanyId}...", company.Id);
+
+        // Runs outside a request, so the tenant query filters are neutral and the
+        // explicit CompanyId filters scope the deletes to the demo company only.
+        await dbContext.AuditLogs.Where(a => a.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+        await dbContext.Claims.Where(c => c.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+        await dbContext.Loans.Where(l => l.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+        await dbContext.Movements.Where(m => m.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+
+        // Restore the accounts to their starting balances, then re-seed examples.
+        foreach (DemoCatalog.DemoAccount account in DemoCatalog.Accounts)
+        {
+            if (!AccountSeeds.TryGetValue(account.Key, out var seed))
+                continue;
+
+            ApplicationUser? user = await userManager.FindByEmailAsync(account.Email);
+            if (user is null)
+                continue;
+
+            ClientAccount? clientAccount = await dbContext.ClientAccounts
+                .SingleOrDefaultAsync(a => a.CompanyId == company.Id && a.OwnerUserId == user.Id, ct);
+            if (clientAccount is null)
+                continue;
+
+            clientAccount.Balance = seed.StartBalance;
+            clientAccount.Status = AccountStatus.Active;
+        }
+
+        await dbContext.SaveChangesAsync(ct);
+
+        await SeedSampleDataAsync(company.Id, ct, force: true);
+
+        logger.LogInformation("Demo data reset completed for company {CompanyId}.", company.Id);
     }
 
     private async Task<Company> GetOrCreateCompanyAsync(CancellationToken ct)
@@ -133,9 +162,12 @@ public sealed class DemoSeeder(
         if (existing is not null)
             return;
 
+        if (!AccountSeeds.TryGetValue(account.Key, out var seed))
+            return;
+
         var user = new ApplicationUser
         {
-            FullName = $"Demo {account.Role}",
+            FullName = seed.DisplayName,
             Email = account.Email,
             UserName = account.Email,
             CompanyId = companyId,
@@ -150,6 +182,20 @@ public sealed class DemoSeeder(
         }
 
         await userManager.AddToRoleAsync(user, account.Role);
+
+        dbContext.ClientAccounts.Add(new ClientAccount
+        {
+            CompanyId = companyId,
+            OwnerUserId = user.Id,
+            DisplayName = seed.DisplayName,
+            Kind = seed.Kind,
+            Status = AccountStatus.Active,
+            Balance = seed.StartBalance,
+            Currency = "EUR",
+            IsTreasury = seed.IsTreasury,
+        });
+
+        await dbContext.SaveChangesAsync(ct);
     }
 
     private async Task SeedSampleDataAsync(Guid companyId, CancellationToken ct, bool force = false)
@@ -158,60 +204,154 @@ public sealed class DemoSeeder(
         // (a reset always re-seeds, so it bypasses this check).
         if (!force)
         {
-            bool hasData = await dbContext.Transactions.AnyAsync(t => t.CompanyId == companyId, ct);
+            bool hasData = await dbContext.Movements.AnyAsync(m => m.CompanyId == companyId, ct);
             if (hasData)
                 return;
         }
 
-        var categories = DefaultCategories
-            .Select(c => new Category
-            {
-                CompanyId = companyId,
-                Name = c.Name,
-                Description = c.Description,
-                IsDefault = true,
-            })
+        var categories = BankCategories
+            .Select(c => new Category { CompanyId = companyId, Name = c.Name, Description = c.Description })
             .ToList();
 
         dbContext.Categories.AddRange(categories);
         await dbContext.SaveChangesAsync(ct);
 
-        // The Admin demo user owns the sample transactions.
-        ApplicationUser? admin = await userManager.FindByEmailAsync(DemoCatalog.Accounts[0].Email);
-        Guid adminId = admin?.Id ?? Guid.Empty;
+        var accounts = await dbContext.ClientAccounts
+            .Where(a => a.CompanyId == companyId)
+            .ToDictionaryAsync(a => a.DisplayName, ct);
 
+        ClientAccount treasury = accounts["Acme Demo Bank Treasury"];
+        ClientAccount ana = accounts["Ana García"];
+        ClientAccount xyz = accounts["XYZ Solutions SL"];
+
+        // ── P2P ledger examples ──────────────────────────────────────────────
         DateTimeOffset today = DateTimeOffset.UtcNow.Date;
-        int[] days = [5, 12, 19, 26];
+        var movements = new List<Movement>();
 
-        var transactions = new List<Transaction>(SampleTransactions.Length);
-
-        for (int i = 0; i < SampleTransactions.Length; i++)
+        for (int i = 0; i < SampleTransfers.Length; i++)
         {
-            var sample = SampleTransactions[i];
-            var category = categories.First(c => c.Name == sample.Category);
+            var sample = SampleTransfers[i];
+            bool anaPays = sample.FromKey == "ana";
+            ClientAccount from = anaPays ? ana : xyz;
+            ClientAccount to = anaPays ? xyz : ana;
+            Category category = categories.First(c => c.Name == sample.Category);
 
-            // 4 movements per month: months 2, 1 and 0 (current) ago.
-            DateTimeOffset baseDate = today.AddMonths(-(2 - i / 4));
-            int day = Math.Min(days[i % 4], DateTime.DaysInMonth(baseDate.Year, baseDate.Month));
+            // Back-date each transfer across the last ~6 weeks.
+            DateTimeOffset date = today.AddDays(-(42 - i * 7));
+            date = new DateTimeOffset(date.Year, date.Month, date.Day, 12, 0, 0, TimeSpan.Zero);
 
-            var date = new DateTimeOffset(baseDate.Year, baseDate.Month, day, 12, 0, 0, TimeSpan.Zero);
-            if (date > today)
-                date = today; // never seed future-dated rows
+            // The ledger must stay consistent: apply the double-entry here too.
+            from.Balance -= sample.Amount;
+            to.Balance += sample.Amount;
 
-            transactions.Add(new Transaction
+            movements.Add(new Movement
             {
                 CompanyId = companyId,
-                CategoryId = category.Id,
-                CreatedByUserId = adminId,
-                Type = sample.Type,
+                FromAccountId = from.Id,
+                ToAccountId = to.Id,
+                Type = MovementType.Transfer,
                 Amount = sample.Amount,
                 Currency = "EUR",
-                Date = date,
+                CategoryId = category.Id,
                 Description = sample.Description,
+                OccurredAt = date,
             });
         }
 
-        dbContext.Transactions.AddRange(transactions);
+        dbContext.Movements.AddRange(movements);
+        await dbContext.SaveChangesAsync(ct);
+
+        // ── One sample loan: XYZ borrowed 5,000, already repaid 2,000 ───────
+        var loan = new Loan
+        {
+            CompanyId = companyId,
+            ClientAccountId = xyz.Id,
+            Amount = 5_000m,
+            RepaidAmount = 2_000m,
+            Currency = "EUR",
+            Reason = "Working capital for the new office",
+            Status = LoanStatus.Approved,
+            DecidedAt = today.AddDays(-30),
+        };
+
+        dbContext.Loans.Add(loan);
+        await dbContext.SaveChangesAsync(ct);
+
+        // The disbursement + repayment are real ledger rows: treasury → XYZ 5,000,
+        // then XYZ → treasury 2,000. XYZ's balance above already reflects them.
+        var disbursement = new Movement
+        {
+            CompanyId = companyId,
+            FromAccountId = treasury.Id,
+            ToAccountId = xyz.Id,
+            Type = MovementType.LoanDisbursement,
+            Amount = 5_000m,
+            Currency = "EUR",
+            Description = "Loan disbursement — Working capital for the new office",
+            OccurredAt = today.AddDays(-30),
+        };
+
+        var repayment = new Movement
+        {
+            CompanyId = companyId,
+            FromAccountId = xyz.Id,
+            ToAccountId = treasury.Id,
+            Type = MovementType.LoanRepayment,
+            Amount = 2_000m,
+            Currency = "EUR",
+            Description = "Loan repayment (partial)",
+            OccurredAt = today.AddDays(-15),
+        };
+
+        dbContext.Movements.AddRange(disbursement, repayment);
+        await dbContext.SaveChangesAsync(ct);
+
+        // Apply their effect on the balances (the history rows document them).
+        treasury.Balance -= 5_000m;
+        xyz.Balance += 5_000m;
+        xyz.Balance -= 2_000m;
+        treasury.Balance += 2_000m;
+
+        // ── One sample claim (resolved via a mediated corrective transfer) ───
+        var claimedMovement = movements[0]; // Ana paid XYZ 1,200 — she claims she overpaid.
+        var claim = new Claim
+        {
+            CompanyId = companyId,
+            MovementId = claimedMovement.Id,
+            ClaimantAccountId = ana.Id,
+            Reason = "I paid 1,200 but the agreed amount was 1,000.",
+            Status = ClaimStatus.Resolved,
+            ProposedAmount = 200m,
+            CorrectiveFromAccountId = xyz.Id,
+            CorrectiveToAccountId = ana.Id,
+            PayerConsented = true,
+            PayeeConsented = true,
+            ResolutionNote = "Both parties consented — corrective transfer executed.",
+        };
+
+        dbContext.Claims.Add(claim);
+        await dbContext.SaveChangesAsync(ct);
+
+        var corrective = new Movement
+        {
+            CompanyId = companyId,
+            FromAccountId = xyz.Id,
+            ToAccountId = ana.Id,
+            Type = MovementType.CorrectiveTransfer,
+            Amount = 200m,
+            Currency = "EUR",
+            CorrectsMovementId = claimedMovement.Id,
+            Description = "Corrective transfer after claim — refund of overpayment",
+            OccurredAt = today.AddDays(-2),
+        };
+
+        dbContext.Movements.Add(corrective);
+        await dbContext.SaveChangesAsync(ct);
+
+        xyz.Balance -= 200m;
+        ana.Balance += 200m;
+
+        claim.ResolutionMovementId = corrective.Id;
         await dbContext.SaveChangesAsync(ct);
     }
 }

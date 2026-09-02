@@ -16,10 +16,10 @@ public sealed class ExcelService : IExcelService
         ct.ThrowIfCancellationRequested();
 
         using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Transactions");
+        var sheet = workbook.AddWorksheet("Movements");
 
         // Header row
-        string[] headers = ["Date", "Category", "Type", "Amount", "Currency", "Description"];
+        string[] headers = ["Date", "Type", "From", "To", "Amount", "Currency", "Description"];
         for (int c = 0; c < headers.Length; c++)
         {
             sheet.Cell(1, c + 1).Value = headers[c];
@@ -32,14 +32,15 @@ public sealed class ExcelService : IExcelService
 
         // Data rows
         int row = 2;
-        foreach (var t in data.Transactions)
+        foreach (var m in data.Movements)
         {
-            sheet.Cell(row, 1).Value = t.Date.ToString("yyyy-MM-dd");
-            sheet.Cell(row, 2).Value = t.CategoryName;
-            sheet.Cell(row, 3).Value = t.Type.ToString();
-            sheet.Cell(row, 4).Value = t.Amount;
-            sheet.Cell(row, 5).Value = t.Currency;
-            sheet.Cell(row, 6).Value = t.Description ?? string.Empty;
+            sheet.Cell(row, 1).Value = m.OccurredAt.ToString("yyyy-MM-dd");
+            sheet.Cell(row, 2).Value = m.Type.ToString();
+            sheet.Cell(row, 3).Value = m.FromDisplayName;
+            sheet.Cell(row, 4).Value = m.ToDisplayName;
+            sheet.Cell(row, 5).Value = m.Amount;
+            sheet.Cell(row, 6).Value = m.Currency;
+            sheet.Cell(row, 7).Value = m.Description ?? string.Empty;
             row++;
         }
 
@@ -47,13 +48,15 @@ public sealed class ExcelService : IExcelService
         row += 2;
         sheet.Cell(row, 1).Value = "Summary";
         sheet.Cell(row, 1).Style.Font.Bold = true;
-        sheet.Cell(row + 1, 1).Value = "Total income";
-        sheet.Cell(row + 1, 2).Value = data.TotalIncome;
-        sheet.Cell(row + 2, 1).Value = "Total expenses";
-        sheet.Cell(row + 2, 2).Value = data.TotalExpenses;
-        sheet.Cell(row + 3, 1).Value = "Balance";
-        sheet.Cell(row + 3, 2).Value = data.Balance;
-        sheet.Cell(row + 3, 2).Style.Font.Bold = true;
+        sheet.Cell(row + 1, 1).Value = "Account";
+        sheet.Cell(row + 1, 2).Value = data.AccountDisplayName;
+        sheet.Cell(row + 2, 1).Value = "Total incoming";
+        sheet.Cell(row + 2, 2).Value = data.TotalIncoming;
+        sheet.Cell(row + 3, 1).Value = "Total outgoing";
+        sheet.Cell(row + 3, 2).Value = data.TotalOutgoing;
+        sheet.Cell(row + 4, 1).Value = "Balance";
+        sheet.Cell(row + 4, 2).Value = data.Balance;
+        sheet.Cell(row + 4, 2).Style.Font.Bold = true;
 
         sheet.Columns().AdjustToContents();
 

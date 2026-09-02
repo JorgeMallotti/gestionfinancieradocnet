@@ -1,15 +1,21 @@
 using GestionFinanciera.Application.Abstractions;
 using GestionFinanciera.Application.Common.Audit;
+using GestionFinanciera.Application.Features.Accounts;
+using GestionFinanciera.Application.Features.Accounts.Interfaces;
 using GestionFinanciera.Application.Features.Auth.Interfaces;
 using GestionFinanciera.Application.Features.Categories;
 using GestionFinanciera.Application.Features.Categories.Interfaces;
+using GestionFinanciera.Application.Features.Claims;
+using GestionFinanciera.Application.Features.Claims.Interfaces;
 using GestionFinanciera.Application.Features.Companies.Interfaces;
 using GestionFinanciera.Application.Features.Dashboard;
 using GestionFinanciera.Application.Features.Dashboard.Interfaces;
+using GestionFinanciera.Application.Features.Loans;
+using GestionFinanciera.Application.Features.Loans.Interfaces;
+using GestionFinanciera.Application.Features.Movements;
+using GestionFinanciera.Application.Features.Movements.Interfaces;
 using GestionFinanciera.Application.Features.Reports;
 using GestionFinanciera.Application.Features.Reports.Interfaces;
-using GestionFinanciera.Application.Features.Transactions;
-using GestionFinanciera.Application.Features.Transactions.Interfaces;
 using GestionFinanciera.Infrastructure.Identity;
 using GestionFinanciera.Infrastructure.Persistence;
 using GestionFinanciera.Infrastructure.Persistence.Repositories;
@@ -75,7 +81,10 @@ public static class DependencyInjection
         // Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoryService, CategoryService>();
-        services.AddScoped<ITransactionService, TransactionService>();
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IMovementService, MovementService>();
+        services.AddScoped<ILoanService, LoanService>();
+        services.AddScoped<IClaimService, ClaimService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IReportService, ReportService>();
@@ -85,7 +94,10 @@ public static class DependencyInjection
 
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IMovementRepository, MovementRepository>();
+        services.AddScoped<ILoanRepository, LoanRepository>();
+        services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
 
         return services;

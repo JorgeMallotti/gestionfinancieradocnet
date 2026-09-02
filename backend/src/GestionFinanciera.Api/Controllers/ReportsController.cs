@@ -8,9 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestionFinanciera.Api.Controllers;
 
 /// <summary>
-/// Report endpoints: PDF download, Excel download and report-by-email.
-/// Read endpoints are available to every authenticated role; sending email
-/// (a paid SMTP operation) is restricted to Admin/Finance.
+/// Report endpoints: PDF/Excel download of the CALLER'S OWN movements (any
+/// role) and report-by-email (Admin only — a paid SMTP operation).
 /// </summary>
 [ApiController]
 [Route("api/reports")]
@@ -26,11 +25,11 @@ public sealed class ReportsController(IReportService service) : ControllerBase
         [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
-        var result = await service.GeneratePdfAsync(companyId, from, to, ct);
+        var result = await service.GeneratePdfAsync(companyId, User.GetUserId(), from, to, ct);
         if (result.IsFailure)
             return this.ToActionResult(result);
 
-        return File(result.Value!, PdfContentType, "financial-report.pdf");
+        return File(result.Value!, PdfContentType, "account-statement.pdf");
     }
 
     [HttpGet("excel")]
@@ -38,19 +37,19 @@ public sealed class ReportsController(IReportService service) : ControllerBase
         [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
-        var result = await service.GenerateExcelAsync(companyId, from, to, ct);
+        var result = await service.GenerateExcelAsync(companyId, User.GetUserId(), from, to, ct);
         if (result.IsFailure)
             return this.ToActionResult(result);
 
-        return File(result.Value!, ExcelContentType, "transactions.xlsx");
+        return File(result.Value!, ExcelContentType, "movements.xlsx");
     }
 
     [HttpPost("email")]
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SendByEmail(EmailReportDto dto, CancellationToken ct)
     {
         var companyId = User.GetCompanyId();
-        var result = await service.SendByEmailAsync(dto, companyId, ct);
+        var result = await service.SendByEmailAsync(dto, companyId, User.GetUserId(), ct);
         if (result.IsFailure)
             return this.ToActionResult(result);
 
