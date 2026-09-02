@@ -158,6 +158,7 @@ export class NotificationBellComponent {
       case 'LoanApproved':
       case 'LoanRejected':
       case 'LoanRepaid':
+      case 'LoanRequested':
         return '/loans';
       case 'ClaimProposed':
       case 'ClaimCounterpartyConsented':
@@ -201,6 +202,7 @@ export class NotificationBellComponent {
       case 'LoanApproved':
       case 'LoanRejected':
       case 'LoanRepaid':
+      case 'LoanRequested':
         return 'account_balance';
       case 'ClaimProposed':
       case 'ClaimCounterpartyConsented':

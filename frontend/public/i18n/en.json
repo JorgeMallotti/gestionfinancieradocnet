@@ -262,6 +262,7 @@
       "LoanApproved": "Your loan of {{ amount }} was approved and funded",
       "LoanRejected": "Your loan of {{ amount }} was rejected",
       "LoanRepaid": "{{ actor }} repaid {{ amount }}",
+      "LoanRequested": "{{ actor }} requested a loan of {{ amount }}",
       "ClaimProposed": "A corrective transfer of {{ amount }} was proposed for a claim",
       "ClaimCounterpartyConsented": "{{ actor }} consented to the corrective transfer of {{ amount }}",
       "ClaimResolved": "A claim was resolved with a corrective transfer of {{ amount }}",

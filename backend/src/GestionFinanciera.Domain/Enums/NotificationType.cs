@@ -33,4 +33,7 @@ public enum NotificationType
 
     /// <summary>The bank suspended the client's account.</summary>
     ClientSuspended = 9,
+
+    /// <summary>A client requested a loan (the bank operator is notified).</summary>
+    LoanRequested = 10,
 }

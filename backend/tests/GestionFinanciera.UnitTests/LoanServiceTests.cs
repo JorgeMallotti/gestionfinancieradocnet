@@ -52,6 +52,13 @@ public sealed class LoanServiceTests
         Assert.Equal(client, result.Value.ClientAccountId);
         Assert.Single(_loans.Items);
         Assert.Contains(_audit.Entries, e => e.Entity == nameof(Loan) && e.Action == AuditAction.Create);
+
+        // Bell: the bank operator (treasury owner) is told a loan was requested.
+        var notification = Assert.Single(_notifications.Sent);
+        Assert.Equal(AdminUserId, notification.ToUserId);
+        Assert.Equal(NotificationType.LoanRequested, notification.Type);
+        Assert.Equal(5000m, notification.Amount);
+        Assert.Equal("XYZ SL", notification.ActorName);
     }
 
     // ── Decide (approve) ─────────────────────────────────────────────────

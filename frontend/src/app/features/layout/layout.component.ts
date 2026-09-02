@@ -103,12 +103,14 @@ export class LayoutComponent {
   }
 
   /**
-   * Opens Jorge's landing page in a new tab. Used from the sidebar link —
-   * window.open is explicit and immune to the sidenav overlay closing the
-   * anchor before the browser follows the href. Closes the overlay sidenav
-   * on handset after opening.
+   * Opens Jorge's landing page in a NEW tab. The anchor keeps its href for
+   * middle-click / accessibility, but a plain left click is prevented and
+   * handled here with window.open — otherwise the native target=_blank
+   * navigation AND window.open would open TWO tabs. Closes the overlay
+   * sidenav on handset after opening.
    */
-  protected openLandingAndClose(sidenav: MatSidenav): void {
+  protected openLandingAndClose(event: Event, sidenav: MatSidenav): void {
+    event.preventDefault();
     window.open(this.landingUrl, '_blank', 'noopener,noreferrer');
     if (this.mode() === 'over') {
       void sidenav.close();

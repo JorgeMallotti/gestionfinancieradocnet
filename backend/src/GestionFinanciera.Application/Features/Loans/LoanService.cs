@@ -60,6 +60,17 @@ public sealed class LoanService(
             companyId, clientUserId, AuditAction.Create, nameof(Loan), loan.Id,
             beforeJson: null, afterJson: AuditJson.Serialize(loan.ToAuditSnapshot()), ipAddress: null, ct);
 
+        // Bell: the bank operator (owner of the treasury) learns that a client
+        // requested a loan and must decide it. Resolved via the repository —
+        // never through a lazy navigation.
+        var treasury = await accounts.GetTreasuryAsync(companyId, ct);
+        if (treasury is not null)
+        {
+            await notifications.NotifyAsync(
+                companyId, treasury.OwnerUserId, NotificationType.LoanRequested,
+                loan.Id, client.DisplayName, loan.Amount, ct);
+        }
+
         return Result<LoanDto>.Success(LoanDto.FromEntity(loan));
     }
 

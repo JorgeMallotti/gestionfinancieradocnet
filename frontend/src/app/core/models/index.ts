@@ -250,6 +250,7 @@ export type NotificationType =
   | 'LoanApproved'
   | 'LoanRejected'
   | 'LoanRepaid'
+  | 'LoanRequested'
   | 'ClaimProposed'
   | 'ClaimCounterpartyConsented'
   | 'ClaimResolved'

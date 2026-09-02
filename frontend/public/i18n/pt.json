@@ -262,6 +262,7 @@
       "LoanApproved": "O teu empréstimo de {{ amount }} foi aprovado e financiado",
       "LoanRejected": "O teu empréstimo de {{ amount }} foi rejeitado",
       "LoanRepaid": "{{ actor }} devolveu {{ amount }}",
+      "LoanRequested": "{{ actor }} pediu um empréstimo de {{ amount }}",
       "ClaimProposed": "Foi proposta uma transferência corretiva de {{ amount }} para uma reclamação",
       "ClaimCounterpartyConsented": "{{ actor }} consentiu a transferência corretiva de {{ amount }}",
       "ClaimResolved": "Uma reclamação foi resolvida com uma transferência corretiva de {{ amount }}",
