@@ -16,4 +16,10 @@ public interface INotificationRepository
     Task<bool> MarkReadAsync(Guid id, Guid companyId, Guid userId, CancellationToken ct);
 
     Task MarkAllReadAsync(Guid companyId, Guid userId, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes the user's notifications that fall outside the keepLatest most
+    /// recent ones — a retention cap so the bell never grows unbounded.
+    /// </summary>
+    Task PruneAsync(Guid companyId, Guid userId, int keepLatest, CancellationToken ct);
 }

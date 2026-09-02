@@ -9,6 +9,13 @@ namespace GestionFinanciera.Application.Features.Notifications;
 /// <summary>Creates and reads user notifications (no business rules beyond scoping).</summary>
 public sealed class NotificationService(INotificationRepository repository) : INotificationService
 {
+    /// <summary>
+    /// Retention cap per user: only the newest notifications are kept, so the
+    /// bell list and its badge never grow unbounded. Matches the frontend's
+    /// default list limit (30).
+    /// </summary>
+    private const int MaxNotificationsPerUser = 30;
+
     public async Task NotifyAsync(
         Guid companyId,
         Guid toUserId,
@@ -28,6 +35,9 @@ public sealed class NotificationService(INotificationRepository repository) : IN
             Amount = amount,
             OccurredAt = DateTimeOffset.UtcNow,
         }, ct);
+
+        // Enforce the retention cap — drop whatever falls outside the newest 30.
+        await repository.PruneAsync(companyId, toUserId, MaxNotificationsPerUser, ct);
     }
 
     public async Task<Result<IReadOnlyList<NotificationDto>>> GetForUserAsync(

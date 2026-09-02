@@ -53,4 +53,25 @@ public sealed class NotificationRepository(ApplicationDbContext dbContext) : INo
             .Where(n => n.CompanyId == companyId && n.UserId == userId && !n.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true), ct);
     }
+
+    public async Task PruneAsync(Guid companyId, Guid userId, int keepLatest, CancellationToken ct)
+    {
+        // The ids that must survive (the newest keepLatest). Loaded explicitly
+        // so the delete below is a simple parameterized NOT IN — no raw SQL.
+        // ThenByDescending(Id) breaks OccurredAt ties deterministically.
+        var keepIds = await dbContext.Notifications
+            .Where(n => n.CompanyId == companyId && n.UserId == userId)
+            .OrderByDescending(n => n.OccurredAt)
+            .ThenByDescending(n => n.Id)
+            .Select(n => n.Id)
+            .Take(keepLatest)
+            .ToListAsync(ct);
+
+        if (keepIds.Count == 0)
+            return;
+
+        await dbContext.Notifications
+            .Where(n => n.CompanyId == companyId && n.UserId == userId && !keepIds.Contains(n.Id))
+            .ExecuteDeleteAsync(ct);
+    }
 }
