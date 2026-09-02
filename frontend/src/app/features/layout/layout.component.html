@@ -12,6 +12,15 @@
                 <span matListItemTitle>{{ item.labelKey | translate }}</span>
             </a>
             }
+
+            <mat-divider class="nav-separator"></mat-divider>
+
+            <!-- Jorge's landing page (landing ↔ MVP navigation) -->
+            <a mat-list-item [href]="landingUrl" target="_blank" rel="noopener noreferrer"
+                (click)="mode() === 'over' && sidenav.close()">
+                <mat-icon matListItemIcon>public</mat-icon>
+                <span matListItemTitle>{{ 'nav.website' | translate }}</span>
+            </a>
         </mat-nav-list>
     </mat-sidenav>
 

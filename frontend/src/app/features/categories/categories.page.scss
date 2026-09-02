@@ -18,6 +18,31 @@
   }
 }
 
+.subtitle {
+  margin: -8px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.name-button {
+  padding: 0;
+  font-weight: 500;
+
+  mat-icon {
+    margin-right: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+}
+
+.table-card {
+  mat-card-content {
+    padding: 8px 16px;
+  }
+}
+
 .table-wrapper {
   overflow-x: auto;
 }

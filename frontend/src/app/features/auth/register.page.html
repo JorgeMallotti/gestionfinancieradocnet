@@ -8,21 +8,23 @@
         <mat-card-content>
             <form [formGroup]="form" (ngSubmit)="submit()">
                 <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>{{ 'auth.companyName' | translate }}</mat-label>
-                    <input matInput formControlName="companyName" autocomplete="organization" required />
-                    @if (form.controls.companyName.hasError('required')) {
-                    <mat-error>{{ 'common.required' | translate }}</mat-error>
-                    }
-                    @if (form.controls.companyName.hasError('maxlength')) {
-                    <mat-error>{{ 'common.maxLength' | translate }}</mat-error>
-                    }
+                    <mat-label>{{ 'auth.accountKind' | translate }}</mat-label>
+                    <mat-select formControlName="kind">
+                        @for (kind of kinds; track kind.value) {
+                        <mat-option [value]="kind.value">{{ kind.labelKey | translate }}</mat-option>
+                        }
+                    </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>{{ 'auth.fullName' | translate }}</mat-label>
-                    <input matInput formControlName="fullName" autocomplete="name" required />
-                    @if (form.controls.fullName.hasError('required')) {
+                    <mat-label>{{ 'auth.displayName' | translate }}</mat-label>
+                    <input matInput formControlName="displayName" autocomplete="name" required />
+                    <mat-hint>{{ 'auth.displayNameHint' | translate }}</mat-hint>
+                    @if (form.controls.displayName.hasError('required')) {
                     <mat-error>{{ 'common.required' | translate }}</mat-error>
+                    }
+                    @if (form.controls.displayName.hasError('maxlength')) {
+                    <mat-error>{{ 'common.maxLength' | translate }}</mat-error>
                     }
                 </mat-form-field>
 
@@ -67,7 +69,7 @@
                     @if (loading()) {
                     <mat-spinner diameter="20"></mat-spinner>
                     } @else {
-                    {{ 'auth.register' | translate }}
+                    {{ 'auth.openAccount' | translate }}
                     }
                 </button>
             </form>

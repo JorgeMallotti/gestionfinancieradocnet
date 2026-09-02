@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthResponse, DemoAccount, LoginDto, RegisterDto, UserRole } from '../models';
+import { AuthResponse, DemoAccount, LoginDto, RegisterDto } from '../models';
 
 /**
  * Authentication state (Signals) + API calls.
@@ -30,10 +30,6 @@ export class AuthService {
   readonly user = signal<AuthResponse | null>(null);
   readonly isAuthenticated = computed(() => this.user() !== null);
   readonly isAdmin = computed(() => this.user()?.role === 'Admin');
-  readonly canMutate = computed(() => {
-    const role = this.user()?.role as UserRole | undefined;
-    return role === 'Admin' || role === 'Finance';
-  });
 
   /** Returns the in-memory access token for the HTTP interceptor. */
   getAccessToken(): string | null {

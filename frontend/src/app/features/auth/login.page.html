@@ -58,11 +58,11 @@
                 @if (demoLoggingIn() === account.key) {
                 <mat-spinner diameter="20"></mat-spinner>
                 } @else {
-                <mat-icon>account_circle</mat-icon>
+                <mat-icon>{{ account.key === 'admin' ? 'account_balance' : 'account_circle' }}</mat-icon>
                 }
                 <span class="demo-button-text">
-                    <strong>{{ roleLabelKey(account.role) | translate }}</strong>
-                    <small>{{ roleDescriptionKey(account.role) | translate }}</small>
+                    <strong>{{ roleLabelKey(account.key) | translate }}</strong>
+                    <small>{{ roleDescriptionKey(account.key) | translate }}</small>
                 </span>
             </button>
             }

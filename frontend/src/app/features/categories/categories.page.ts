@@ -1,7 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -16,13 +15,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { Category } from '../../core/models';
 import { extractError } from '../../shared/utils/errors';
-import { ConfirmDialog, ConfirmDialogData } from '../../shared/components/confirm-dialog.component';
 import { CategoryDialog } from './category-dialog.component';
+import { CategoryDetailsDialog, CategoryDetailsResult } from './category-details-dialog.component';
 
 /**
- * Categories CRUD. Mutations are shown only to Admin/Finance (backend also
- * enforces this). After each mutation the local list is updated with the
- * returned resource — no refetch (optimistic updates, AGENTS.md §12).
+ * Categories are the bank Admin's catalog (visible to every client as an
+ * optional movement tag). Clicking a category name opens a popup with the
+ * details + Edit/Delete for the Admin; deleting requires a double check.
  */
 @Component({
   selector: 'app-categories-page',
@@ -31,7 +30,6 @@ import { CategoryDialog } from './category-dialog.component';
     MatTableModule,
     MatButtonModule,
     MatIconModule,
-    MatChipsModule,
     MatProgressBarModule,
     MatDialogModule,
     TranslatePipe,
@@ -49,9 +47,8 @@ export class CategoriesPage {
 
   protected readonly loading = signal(true);
   protected readonly categories = signal<Category[]>([]);
-  protected readonly canMutate = computed(() => this.auth.canMutate());
+  protected readonly isAdmin = computed(() => this.auth.isAdmin());
 
-  /** True on handset — renders card list instead of the table (AGENTS.md §10). */
   private readonly isHandset = toSignal(
     this.breakpoints.observe([Breakpoints.Handset]).pipe(map((x) => x.matches)),
     { initialValue: false },
@@ -60,9 +57,7 @@ export class CategoriesPage {
   protected readonly isHandsetLayout = computed(() => this.isHandset());
 
   protected readonly displayedColumns = computed(() =>
-    this.canMutate()
-      ? ['name', 'description', 'isDefault', 'actions']
-      : ['name', 'description', 'isDefault'],
+    this.isAdmin() ? ['name', 'description', 'actions'] : ['name', 'description'],
   );
 
   constructor() {
@@ -81,6 +76,7 @@ export class CategoriesPage {
     }
   }
 
+  /** Opens the create dialog (Admin). */
   openCreate(): void {
     const ref = this.dialog.open(CategoryDialog, {
       width: '440px',
@@ -101,6 +97,7 @@ export class CategoriesPage {
     });
   }
 
+  /** Opens the edit dialog (Admin). */
   openEdit(category: Category): void {
     const ref = this.dialog.open(CategoryDialog, {
       width: '440px',
@@ -123,24 +120,27 @@ export class CategoriesPage {
     });
   }
 
-  confirmDelete(category: Category): void {
-    const data: ConfirmDialogData = {
-      titleKey: 'categories.deleteTitle',
-      messageKey: 'categories.deleteMessage',
-      confirmKey: 'common.delete',
-    };
-
-    const ref = this.dialog.open(ConfirmDialog, { width: '400px', data });
-
-    ref.afterClosed().subscribe(async (confirmed) => {
-      if (!confirmed) return;
-      try {
-        await this.service.delete(category.id);
-        this.categories.update((items) => items.filter((item) => item.id !== category.id));
-        this.toast.success(this.translate.instant('categories.deleted'));
-      } catch (error) {
-        this.toast.error(extractError(error));
-      }
+  /** Click on a category name → popup with details (+ Edit/Delete for Admin). */
+  openDetails(category: Category): void {
+    const ref = this.dialog.open(CategoryDetailsDialog, {
+      width: '440px',
+      data: { category, isAdmin: this.isAdmin() },
     });
+
+    ref.afterClosed().subscribe(async (result: CategoryDetailsResult) => {
+      if (!result) return;
+      if (result.action === 'edit') this.openEdit(category);
+      if (result.action === 'delete') await this.deleteCategory(category);
+    });
+  }
+
+  private async deleteCategory(category: Category): Promise<void> {
+    try {
+      await this.service.delete(category.id);
+      this.categories.update((items) => items.filter((item) => item.id !== category.id));
+      this.toast.success(this.translate.instant('categories.deleted'));
+    } catch (error) {
+      this.toast.error(extractError(error));
+    }
   }
 }

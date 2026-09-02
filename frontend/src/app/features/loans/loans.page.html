@@ -1,0 +1,120 @@
+<div class="loans">
+    <div class="page-head">
+        <h1>{{ 'nav.loans' | translate }}</h1>
+        @if (!isAdmin()) {
+        <button mat-raised-button color="primary" [disabled]="requestForm.invalid || busy() === 'request'"
+            (click)="request()">
+            <mat-icon>add</mat-icon>
+            {{ 'loans.request' | translate }}
+        </button>
+        }
+    </div>
+
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    @if (!isAdmin()) {
+    <mat-card class="request-card">
+        <mat-card-content>
+            <form [formGroup]="requestForm" (ngSubmit)="request()">
+                <div class="form-grid">
+                    <mat-form-field appearance="outline">
+                        <mat-label>{{ 'loans.amount' | translate }}</mat-label>
+                        <input matInput type="number" min="0.01" step="0.01" formControlName="amount" required />
+                        @if (requestForm.controls.amount.hasError('required')) {
+                        <mat-error>{{ 'common.required' | translate }}</mat-error>
+                        }
+                        @if (requestForm.controls.amount.hasError('min')) {
+                        <mat-error>{{ 'loans.errorAmountMin' | translate }}</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="reason-field">
+                        <mat-label>{{ 'loans.reason' | translate }}</mat-label>
+                        <textarea matInput rows="2" formControlName="reason" required></textarea>
+                        @if (requestForm.controls.reason.hasError('required')) {
+                        <mat-error>{{ 'common.required' | translate }}</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <p class="hint">{{ 'loans.requestHint' | translate }}</p>
+            </form>
+        </mat-card-content>
+    </mat-card>
+    }
+
+    @if (items().length === 0 && !loading()) {
+    <p class="empty">{{ 'loans.empty' | translate }}</p>
+    }
+
+    <div class="loan-list">
+        @for (loan of items(); track loan.id) {
+        <mat-card class="loan-card">
+            <mat-card-content>
+                <div class="loan-top">
+                    <div class="loan-main">
+                        <span class="loan-client">{{ loan.clientDisplayName }}</span>
+                        <span class="loan-amount">{{ loan.amount | number: '1.2-2' }} {{ loan.currency }}</span>
+                        <span class="loan-status">
+                            <mat-chip [class.approved]="loan.status === 'Approved'"
+                                [class.pending]="loan.status === 'Pending'"
+                                [class.rejected]="loan.status === 'Rejected'">
+                                {{ statusLabelKey(loan.status) | translate }}
+                            </mat-chip>
+                        </span>
+                    </div>
+                    <div class="loan-side">
+                        @if (loan.status === 'Approved' && loan.outstandingAmount > 0) {
+                        <span class="outstanding">
+                            {{ 'loans.outstanding' | translate }}:
+                            <strong>{{ loan.outstandingAmount | number: '1.2-2' }}</strong>
+                        </span>
+                        }
+                        @if (loan.repaidAmount > 0) {
+                        <span class="repaid">{{ 'loans.repaidLabel' | translate }}: {{ loan.repaidAmount | number:
+                            '1.2-2' }}</span>
+                        }
+                    </div>
+                </div>
+
+                <p class="loan-reason">{{ loan.reason }}</p>
+
+                @if (loan.decisionNote) {
+                <p class="loan-note">{{ 'loans.decisionNote' | translate }}: {{ loan.decisionNote }}</p>
+                }
+
+                @if (isAdmin() && loan.status === 'Pending') {
+                <div class="admin-actions">
+                    <mat-form-field appearance="outline" class="note-field">
+                        <mat-label>{{ 'loans.noteOptional' | translate }}</mat-label>
+                        <input matInput [formControl]="decideNote" />
+                    </mat-form-field>
+                    <button mat-raised-button color="primary" [disabled]="busy() === loan.id" (click)="approve(loan)">
+                        {{ 'loans.approve' | translate }}
+                    </button>
+                    <button mat-stroked-button [disabled]="busy() === loan.id" (click)="reject(loan)">
+                        {{ 'loans.reject' | translate }}
+                    </button>
+                </div>
+                }
+
+                @if (!isAdmin() && loan.status === 'Approved' && loan.outstandingAmount > 0) {
+                <div class="repay-row">
+                    <mat-form-field appearance="outline" class="repay-field">
+                        <mat-label>{{ 'loans.repayAmount' | translate }}</mat-label>
+                        <input matInput #repayInput type="number" min="0.01" step="0.01"
+                            placeholder="{{ loan.outstandingAmount }}" />
+                    </mat-form-field>
+                    <button mat-raised-button color="accent" [disabled]="busy() === loan.id"
+                        (click)="repay(loan, repayInput)">
+                        <mat-icon>payments</mat-icon>
+                        {{ 'loans.repay' | translate }}
+                    </button>
+                </div>
+                }
+            </mat-card-content>
+        </mat-card>
+        }
+    </div>
+</div>

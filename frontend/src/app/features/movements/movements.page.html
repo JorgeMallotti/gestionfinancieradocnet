@@ -1,0 +1,104 @@
+<div class="movements">
+    <div class="page-head">
+        <h1>{{ 'nav.movements' | translate }}</h1>
+        <div class="head-actions">
+            <button mat-raised-button color="primary" (click)="openTransfer()">
+                <mat-icon>send</mat-icon>
+                {{ 'transfers.send' | translate }}
+            </button>
+            <button mat-stroked-button [disabled]="exporting() !== null" (click)="exportPdf()">
+                @if (exporting() === 'pdf') {
+                <mat-spinner diameter="18"></mat-spinner>
+                } @else {
+                <mat-icon>picture_as_pdf</mat-icon>
+                }
+                {{ 'reports.pdf' | translate }}
+            </button>
+            <button mat-stroked-button [disabled]="exporting() !== null" (click)="exportExcel()">
+                @if (exporting() === 'excel') {
+                <mat-spinner diameter="18"></mat-spinner>
+                } @else {
+                <mat-icon>table_chart</mat-icon>
+                }
+                {{ 'reports.excel' | translate }}
+            </button>
+        </div>
+    </div>
+
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <mat-card class="list-card" [class.hidden]="loading()">
+        <mat-card-content>
+            <!-- Desktop: two-column table (description + amount), row click → details -->
+            @if (!isHandsetLayout()) {
+            <table mat-table [dataSource]="items()" class="movements-table">
+                <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef>{{ 'movements.description' | translate }}</th>
+                    <td mat-cell *matCellDef="let movement" (click)="openDetails(movement)" class="clickable">
+                        <div class="movement-description">
+                            <mat-icon class="direction-icon" [class.in]="isIncoming(movement)">
+                                {{ isIncoming(movement) ? 'south_west' : 'north_east' }}
+                            </mat-icon>
+                            <div class="movement-text">
+                                <span class="movement-title">{{ displayName(movement) }}</span>
+                                <span class="movement-meta">
+                                    {{ isIncoming(movement) ? movement.fromDisplayName : movement.toDisplayName }}
+                                    · {{ typeLabelKey(movement.type) | translate }}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="amount">
+                    <th mat-header-cell *matHeaderCellDef class="amount-col">{{ 'movements.amount' | translate }}</th>
+                    <td mat-cell *matCellDef="let movement" (click)="openDetails(movement)"
+                        class="amount-col clickable">
+                        <span class="amount" [class.negative]="!isIncoming(movement)">
+                            {{ isIncoming(movement) ? '+' : '−' }}{{ movement.amount | number: '1.2-2' }}
+                        </span>
+                        <span class="date">{{ movement.occurredAt | date: 'dd MMM yyyy' }}</span>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="['description', 'amount']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['description', 'amount']" class="clickable-row"></tr>
+            </table>
+            }
+
+            <!-- Handset: card list (same two visual fields) -->
+            @else {
+            <div class="mobile-list">
+                @for (movement of items(); track movement.id) {
+                <button mat-stroked-button class="mobile-movement" (click)="openDetails(movement)">
+                    <span class="movement-description">
+                        <mat-icon class="direction-icon" [class.in]="isIncoming(movement)">
+                            {{ isIncoming(movement) ? 'south_west' : 'north_east' }}
+                        </mat-icon>
+                        <span class="movement-text">
+                            <span class="movement-title">{{ displayName(movement) }}</span>
+                            <span class="movement-meta">
+                                {{ isIncoming(movement) ? movement.fromDisplayName : movement.toDisplayName }}
+                                · {{ movement.occurredAt | date: 'dd MMM yyyy' }}
+                            </span>
+                        </span>
+                    </span>
+                    <span class="amount" [class.negative]="!isIncoming(movement)">
+                        {{ isIncoming(movement) ? '+' : '−' }}{{ movement.amount | number: '1.2-2' }}
+                    </span>
+                </button>
+                }
+            </div>
+            }
+
+            @if (items().length === 0 && !loading()) {
+            <p class="empty">{{ 'movements.empty' | translate }}</p>
+            }
+
+            <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageSizeOptions]="[10, 25, 50]"
+                (page)="onPage($event)" [showFirstLastButtons]="true"></mat-paginator>
+        </mat-card-content>
+    </mat-card>
+</div>

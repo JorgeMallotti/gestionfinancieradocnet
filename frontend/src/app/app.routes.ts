@@ -18,6 +18,10 @@ export const routes: Routes = [
     path: 'auth/register',
     loadComponent: () => import('./features/auth/register.page').then((m) => m.RegisterPage),
   },
+  {
+    path: 'auth/pending',
+    loadComponent: () => import('./features/auth/pending.page').then((m) => m.PendingPage),
+  },
 
   // ── Protected shell (sidenav + toolbar) ───────────────────────────────
   {
@@ -32,9 +36,17 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
       },
       {
-        path: 'transactions',
+        path: 'movements',
         loadComponent: () =>
-          import('./features/transactions/transactions.page').then((m) => m.TransactionsPage),
+          import('./features/movements/movements.page').then((m) => m.MovementsPage),
+      },
+      {
+        path: 'loans',
+        loadComponent: () => import('./features/loans/loans.page').then((m) => m.LoansPage),
+      },
+      {
+        path: 'claims',
+        loadComponent: () => import('./features/claims/claims.page').then((m) => m.ClaimsPage),
       },
       {
         path: 'categories',
@@ -44,6 +56,12 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () => import('./features/reports/reports.page').then((m) => m.ReportsPage),
+      },
+      {
+        path: 'admin/clients',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/admin/admin-clients.page').then((m) => m.AdminClientsPage),
       },
       {
         path: 'audit',

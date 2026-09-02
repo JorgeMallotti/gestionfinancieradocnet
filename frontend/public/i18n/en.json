@@ -1,14 +1,16 @@
 ﻿{
   "app": {
-    "name": "Finance Manager"
+    "name": "Acme Bank"
   },
   "nav": {
     "dashboard": "Dashboard",
-    "transactions": "Transactions",
+    "movements": "Movements",
+    "loans": "Loans",
+    "claims": "Claims",
     "categories": "Categories",
     "reports": "Reports",
+    "adminClients": "Clients",
     "audit": "Audit log",
-    "logout": "Log out",
     "website": "Visit website"
   },
   "common": {
@@ -37,100 +39,202 @@
     "clear": "Clear",
     "noData": "No data yet",
     "noDescription": "No description",
-    "userMenu": "User menu"
+    "userMenu": "User menu",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No"
   },
   "auth": {
     "login": "Log in",
     "register": "Create account",
+    "goLogin": "Go to login",
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm password",
-    "companyName": "Company name",
-    "fullName": "Full name",
+    "accountKind": "Account type",
+    "kindPerson": "Person",
+    "kindCompany": "Company",
+    "displayName": "Display name",
+    "displayNameHint": "Your full name (person) or the company name.",
     "loginTitle": "Welcome back",
-    "loginSubtitle": "Sign in to your company workspace",
-    "registerTitle": "Create your company",
-    "registerSubtitle": "Set up your workspace in minutes",
-    "logoutSuccess": "You have been logged out",
+    "loginSubtitle": "Sign in to your bank account",
+    "registerTitle": "Open your account",
+    "registerSubtitle": "Register as a client of the bank (person or company)",
+    "openAccount": "Open account",
     "errorGeneric": "Authentication failed. Please try again.",
     "errorEmailExists": "An account with this email already exists.",
     "errorInvalidCredentials": "Invalid email or password.",
     "errorEmailInvalid": "Enter a valid email address.",
     "errorPasswordMin": "Password must be at least 8 characters.",
     "errorPasswordMismatch": "Passwords do not match.",
+    "pendingTitle": "Request received",
+    "pendingSubtitle": "Your account is waiting for approval",
+    "pendingStep1": "Your account was created with status Pending. The bank operator must approve it before you can send money, request loans or open claims.",
+    "pendingStep2": "The bank operator approves new clients from the Clients page (Administrator role).",
+    "pendingTip": "Demo tip: log in as Administrator (one-click demo button) and approve the new client from the Clients section.",
     "demoTitle": "Quick demo access",
-    "demoSubtitle": "One click, no registration. Explore the app with different roles.",
+    "demoSubtitle": "One click, no registration. Explore the demo bank.",
     "demo": {
-      "roles": {
-        "admin": "Administrator",
-        "adminDescription": "Full access: users, categories, transactions and the audit log.",
-        "finance": "Finance",
-        "financeDescription": "Reports: PDF/Excel exports and email delivery.",
-        "user": "User",
-        "userDescription": "Day-to-day operations on categories and transactions."
+      "accounts": {
+        "admin": {
+          "label": "Bank operator (Admin)",
+          "description": "Approve clients, decide loans and mediate claims."
+        },
+        "ana": {
+          "label": "Ana (person client)",
+          "description": "Send money, repay loans and open claims."
+        },
+        "xyz": {
+          "label": "XYZ Solutions (company client)",
+          "description": "Send money, repay loans and open claims."
+        }
       }
     }
   },
   "dashboard": {
     "title": "Dashboard",
-    "totalIncome": "Total income",
-    "totalExpenses": "Total expenses",
+    "incoming": "Money in",
+    "outgoing": "Money out",
     "balance": "Balance",
-    "transactionCount": "Transactions",
-    "monthlySeries": "Monthly income vs expenses",
-    "byCategory": "By category",
+    "movementCount": "Movements",
+    "monthlySeries": "Monthly money in vs out",
     "noData": "No data to display yet",
-    "breakdownAria": "Breakdown type"
+    "treasury": "Bank treasury"
+  },
+  "movements": {
+    "description": "Description",
+    "amount": "Amount",
+    "empty": "No movements yet. Send money to another client to see it here.",
+    "detailTitle": "Movement details",
+    "type": "Type",
+    "from": "From",
+    "to": "To",
+    "date": "Date",
+    "category": "Category",
+    "correctionOf": "Correction of movement",
+    "types": {
+      "Transfer": "Transfer",
+      "LoanDisbursement": "Loan disbursement",
+      "LoanRepayment": "Loan repayment",
+      "CorrectiveTransfer": "Corrective transfer",
+      "InitialBalance": "Opening balance"
+    }
+  },
+  "transfers": {
+    "send": "Send money",
+    "to": "Receiver",
+    "amount": "Amount",
+    "categoryOptional": "Category (optional)",
+    "description": "Description (optional)",
+    "confirm": "Send",
+    "errorAmountMin": "Amount must be greater than zero.",
+    "sent": "Money sent",
+    "bankTreasuryPrefix": "🏦 "
   },
   "categories": {
     "title": "Categories",
     "create": "New category",
     "name": "Name",
     "description": "Description",
-    "isDefault": "Type",
-    "defaultChip": "Default",
     "createTitle": "New category",
     "editTitle": "Edit category",
-    "deleteTitle": "Delete category",
-    "deleteMessage": "This category will be permanently deleted. This action cannot be undone.",
+    "detailsTitle": "Category details",
+    "catalogHint": "Bank-managed catalog. Clients can tag their movements with these categories (optional).",
+    "deleteImplications": "Deleting a category is permanent. Categories already used as tags stay attached to their movements but can no longer be selected for new ones.",
+    "understandCheck": "I understand the consequences",
     "created": "Category created",
     "updated": "Category updated",
     "deleted": "Category deleted"
   },
-  "transactions": {
-    "title": "Transactions",
-    "create": "New transaction",
-    "type": "Type",
-    "category": "Category",
-    "date": "Date",
+  "loans": {
+    "request": "Request a loan",
     "amount": "Amount",
-    "currency": "Currency",
-    "description": "Description",
-    "income": "Income",
-    "expense": "Expense",
-    "from": "From",
-    "to": "To",
-    "createTitle": "New transaction",
-    "editTitle": "Edit transaction",
-    "deleteTitle": "Delete transaction",
-    "deleteMessage": "This transaction will be permanently deleted. This action cannot be undone.",
-    "errorAmountMin": "Amount must be greater than zero.",
-    "errorCurrency": "Currency must be a 3-letter code (e.g. EUR).",
-    "created": "Transaction created",
-    "updated": "Transaction updated",
-    "deleted": "Transaction deleted"
+    "reason": "Reason",
+    "requestHint": "The bank operator reviews your request and funds it from the treasury if approved. No interest, no deadlines.",
+    "empty": "No loans yet.",
+    "status": {
+      "Pending": "Pending",
+      "Approved": "Approved",
+      "Rejected": "Rejected",
+      "Repaid": "Repaid"
+    },
+    "outstanding": "Outstanding",
+    "repaidLabel": "Repaid",
+    "decisionNote": "Operator note",
+    "noteOptional": "Note (optional)",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Loan approved — the treasury transferred the funds",
+    "rejected": "Loan rejected",
+    "repayAmount": "Amount to repay",
+    "repay": "Repay",
+    "repaid": "Payment received",
+    "errorRepayAmount": "Enter a valid amount to repay.",
+    "errorAmountMin": "Amount must be greater than zero."
+  },
+  "claims": {
+    "open": "Open a claim",
+    "movement": "Movement",
+    "reason": "Reason",
+    "openedBy": "Opened by",
+    "empty": "No claims yet.",
+    "status": {
+      "Open": "Open",
+      "UnderReview": "Under review",
+      "Resolved": "Resolved",
+      "Rejected": "Rejected"
+    },
+    "proposal": "Proposed correction",
+    "payerConsent": "Sender consents",
+    "payeeConsent": "Receiver consents",
+    "proposeAction": "Propose correction (mediate)",
+    "confirmProposal": "Send proposal",
+    "amount": "Amount",
+    "from": "Refund from",
+    "to": "Refund to",
+    "consent": "I consent",
+    "refuse": "I refuse",
+    "consented": "Consent recorded",
+    "refused": "You refused the correction",
+    "youConsented": "You already gave your consent",
+    "opened": "Claim opened",
+    "proposed": "Correction proposed — waiting for both parties",
+    "movementPlaceholder": "Pick one of your movements"
+  },
+  "admin": {
+    "clients": {
+      "title": "Clients",
+      "pendingBadge": "{{ count }} pending",
+      "filter": "Status",
+      "status": {
+        "All": "All",
+        "Pending": "Pending",
+        "Active": "Active",
+        "Suspended": "Suspended"
+      },
+      "approve": "Approve",
+      "suspend": "Suspend",
+      "approved": "Client approved — they can now operate",
+      "suspended": "Client suspended",
+      "since": "Client since",
+      "empty": "No clients match this filter."
+    }
   },
   "reports": {
     "title": "Reports",
-    "pdfTitle": "PDF report",
-    "pdfSubtitle": "Financial statement as a PDF document",
+    "pdf": "PDF",
+    "excel": "Excel",
+    "pdfTitle": "PDF statement",
+    "pdfSubtitle": "Your movements as a PDF document",
     "downloadPdf": "Download PDF",
     "excelTitle": "Excel export",
-    "excelSubtitle": "Transactions export as an Excel workbook",
+    "excelSubtitle": "Your movements as an Excel workbook",
     "downloadExcel": "Download Excel",
     "emailTitle": "Send by email",
-    "emailSubtitle": "Send the PDF report to an email address",
+    "emailSubtitle": "Send the PDF statement to an email address",
     "emailTo": "Recipient email",
+    "fromDate": "From date",
+    "toDate": "To date",
     "sendEmail": "Send",
     "emailSent": "Report email sent",
     "smtpNotConfigured": "SMTP is not configured yet. Please check the server settings."
