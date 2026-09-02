@@ -23,6 +23,26 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: baseline;
+
+  // Handset: single column, full-width fields, stacked actions
+  &.handset {
+    flex-direction: column;
+    align-items: stretch;
+
+    mat-form-field {
+      width: 100%;
+      flex: none;
+    }
+
+    .filter-actions {
+      flex-direction: column;
+      margin-left: 0;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
 }
 
 .filters mat-form-field {
@@ -42,23 +62,89 @@
   padding-bottom: 0;
 }
 
+/* ── Handset card list (AGENTS.md §10: cards instead of a scrollable table) ── */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tx-card {
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+}
+
+.tx-card-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tx-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tx-card-date {
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tx-card-category {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.tx-card-desc {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+  word-break: break-word;
+}
+
+.tx-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tx-card-amount {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.tx-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .chip-income {
-  background: rgba(76, 175, 80, 0.15);
-  color: #2e7d32;
+  background: var(--sem-success-bg);
+  color: var(--sem-success);
 }
 
 .chip-expense {
-  background: rgba(244, 67, 54, 0.15);
-  color: #c62828;
+  background: var(--sem-error-bg);
+  color: var(--sem-error);
 }
 
 .amount-income {
-  color: #2e7d32;
+  color: var(--sem-success);
   font-weight: 500;
 }
 
 .amount-expense {
-  color: #c62828;
+  color: var(--sem-error);
   font-weight: 500;
 }
 

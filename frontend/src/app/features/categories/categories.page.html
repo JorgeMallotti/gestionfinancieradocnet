@@ -13,6 +13,45 @@
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
+    <!-- Handset: card list (no horizontal scroll — AGENTS.md §10) -->
+    @if (isHandsetLayout()) {
+    <div class="card-list">
+        @for (cat of categories(); track cat.id) {
+        <mat-card class="cat-card">
+            <mat-card-content>
+                <div class="cat-card-main">
+                    <div class="cat-card-left">
+                        <div class="cat-card-name">
+                            {{ cat.name }}
+                            @if (cat.isDefault) {
+                            <mat-chip>{{ 'categories.defaultChip' | translate }}</mat-chip>
+                            }
+                        </div>
+                        @if (cat.description) {
+                        <div class="cat-card-desc">{{ cat.description }}</div>
+                        }
+                    </div>
+                    @if (canMutate()) {
+                    <div class="cat-card-actions">
+                        <button mat-icon-button (click)="openEdit(cat)" [attr.aria-label]="'common.edit' | translate">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="confirmDelete(cat)" [disabled]="cat.isDefault"
+                            [attr.aria-label]="'common.delete' | translate">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+                    }
+                </div>
+            </mat-card-content>
+        </mat-card>
+        } @empty {
+        @if (!loading()) {
+        <p class="empty">{{ 'common.noData' | translate }}</p>
+        }
+        }
+    </div>
+    } @else {
     <mat-card>
         <mat-card-content class="table-wrapper">
             <table mat-table [dataSource]="categories()">
@@ -60,4 +99,5 @@
             }
         </mat-card-content>
     </mat-card>
+    }
 </div>

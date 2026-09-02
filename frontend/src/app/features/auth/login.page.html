@@ -61,8 +61,8 @@
                 <mat-icon>account_circle</mat-icon>
                 }
                 <span class="demo-button-text">
-                    <strong>{{ roleLabel(account.role) }}</strong>
-                    <small>{{ roleDescription(account.role) }}</small>
+                    <strong>{{ roleLabelKey(account.role) | translate }}</strong>
+                    <small>{{ roleDescriptionKey(account.role) | translate }}</small>
                 </span>
             </button>
             }

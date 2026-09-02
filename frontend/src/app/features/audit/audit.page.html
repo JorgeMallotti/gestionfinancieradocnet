@@ -8,6 +8,33 @@
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
+    <!-- Handset: card list (no horizontal scroll — AGENTS.md §10) -->
+    @if (isHandsetLayout()) {
+    <div class="card-list">
+        @for (entry of entries(); track entry.id) {
+        <mat-card class="audit-card">
+            <mat-card-content>
+                <div class="audit-card-main">
+                    <span class="action-chip" [class]="actionClass(entry.action)">{{ entry.action }}</span>
+                    <span class="audit-card-entity mono">{{ entry.entity }}</span>
+                </div>
+                <div class="audit-card-meta">
+                    <span>{{ entry.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</span>
+                    <span class="mono">{{ entry.userId | slice: 0:8 }}</span>
+                    <span class="mono">{{ entry.ipAddress || '—' }}</span>
+                </div>
+            </mat-card-content>
+        </mat-card>
+        } @empty {
+        @if (!loading()) {
+        <p class="empty">{{ 'common.noData' | translate }}</p>
+        }
+        }
+    </div>
+
+    <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageSizeOptions]="[10, 20, 50]" [pageIndex]="page() - 1"
+        (page)="onPage($event)" showFirstLastButtons></mat-paginator>
+    } @else {
     <mat-card>
         <mat-card-content class="table-wrapper">
             <table mat-table [dataSource]="entries()">
@@ -50,4 +77,5 @@
                 [pageIndex]="page() - 1" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
         </mat-card-content>
     </mat-card>
+    }
 </div>

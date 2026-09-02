@@ -69,6 +69,9 @@ public static class DependencyInjection
         services.Configure<DemoOptions>(configuration.GetSection(DemoOptions.SectionName));
         services.AddScoped<DemoSeeder>();
 
+        // Periodic demo data reset (BackgroundService + PeriodicTimer, no endpoint)
+        services.AddHostedService<DemoResetService>();
+
         // Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoryService, CategoryService>();

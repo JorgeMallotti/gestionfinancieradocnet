@@ -14,4 +14,10 @@ public sealed class DemoOptions
 
     /// <summary>Password shared by every demo account. Never exposed to the client.</summary>
     public string Password { get; set; } = "Passw0rd!123";
+
+    /// <summary>
+    /// Hours between automatic demo data resets (BackgroundService timer).
+    /// Clamped to a minimum of 1 hour by the reset service.
+    /// </summary>
+    public int ResetIntervalHours { get; set; } = 24;
 }

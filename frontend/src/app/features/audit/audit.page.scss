@@ -25,6 +25,42 @@
   padding-bottom: 0;
 }
 
+/* ── Handset card list (AGENTS.md §10: cards instead of a scrollable table) ── */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audit-card {
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+  }
+}
+
+.audit-card-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.audit-card-entity {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.audit-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .mono {
   font-family: 'Roboto Mono', monospace;
   font-size: 0.85rem;
@@ -38,18 +74,18 @@
 }
 
 .action-create {
-  background: rgba(76, 175, 80, 0.15);
-  color: #2e7d32;
+  background: var(--sem-success-bg);
+  color: var(--sem-success);
 }
 
 .action-update {
-  background: rgba(255, 152, 0, 0.15);
-  color: #e65100;
+  background: var(--sem-warning-bg);
+  color: var(--sem-warning);
 }
 
 .action-delete {
-  background: rgba(244, 67, 54, 0.15);
-  color: #c62828;
+  background: var(--sem-error-bg);
+  color: var(--sem-error);
 }
 
 .empty {

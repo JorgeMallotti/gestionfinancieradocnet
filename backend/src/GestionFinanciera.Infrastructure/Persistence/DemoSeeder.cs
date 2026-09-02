@@ -51,6 +51,43 @@ public sealed class DemoSeeder(
         ("Operations", TransactionType.Expense, 850m, "Equipment maintenance"),
     ];
 
+    /// <summary>
+    /// Wipes the demo company's business data (audit trail, transactions and
+    /// categories) and re-seeds the sample dataset. The demo users and the
+    /// company itself are kept so the one-click logins keep working.
+    /// Scoped to the demo company only — real companies are never touched.
+    /// </summary>
+    public async Task ResetDemoDataAsync(CancellationToken ct)
+    {
+        if (!_options.Enabled)
+        {
+            logger.LogInformation("Demo reset skipped (Demo:Enabled=false).");
+            return;
+        }
+
+        Company? company = await dbContext.Companies
+            .SingleOrDefaultAsync(c => c.Name == DemoCatalog.CompanyName, ct);
+
+        if (company is null)
+        {
+            logger.LogInformation("Demo reset skipped (demo company not found).");
+            return;
+        }
+
+        logger.LogInformation("Resetting demo data for company {CompanyId}...", company.Id);
+
+        // Delete order matters: transactions reference categories (FK).
+        // Runs outside a request, so the tenant query filters are neutral and
+        // the explicit CompanyId filters scope the deletes to the demo company.
+        await dbContext.AuditLogs.Where(a => a.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+        await dbContext.Transactions.Where(t => t.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+        await dbContext.Categories.Where(c => c.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+
+        await SeedSampleDataAsync(company.Id, ct, force: true);
+
+        logger.LogInformation("Demo data reset completed for company {CompanyId}.", company.Id);
+    }
+
     public async Task SeedAsync(CancellationToken ct)
     {
         if (!_options.Enabled)
@@ -115,12 +152,16 @@ public sealed class DemoSeeder(
         await userManager.AddToRoleAsync(user, account.Role);
     }
 
-    private async Task SeedSampleDataAsync(Guid companyId, CancellationToken ct)
+    private async Task SeedSampleDataAsync(Guid companyId, CancellationToken ct, bool force = false)
     {
-        // Only the first time — keep the dataset stable across restarts.
-        bool hasData = await dbContext.Transactions.AnyAsync(t => t.CompanyId == companyId, ct);
-        if (hasData)
-            return;
+        // Only the first time — keep the dataset stable across restarts
+        // (a reset always re-seeds, so it bypasses this check).
+        if (!force)
+        {
+            bool hasData = await dbContext.Transactions.AnyAsync(t => t.CompanyId == companyId, ct);
+            if (hasData)
+                return;
+        }
 
         var categories = DefaultCategories
             .Select(c => new Category

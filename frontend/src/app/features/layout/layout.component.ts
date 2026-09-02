@@ -16,6 +16,7 @@ import { map } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { AppLanguage, LanguageService } from '../../core/services/language.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { environment } from '../../../environments/environment';
 
 interface NavItem {
   route: string;
@@ -78,6 +79,9 @@ export class LayoutComponent {
   ];
 
   protected readonly currentLang = computed(() => this.languageService.current);
+
+  /** Jorge's landing page URL (environment-specific, no secrets). */
+  protected readonly landingUrl = environment.landingUrl;
 
   protected visibleItems = computed(() =>
     this.navItems.filter((item) => !item.adminOnly || this.auth.isAdmin()),

@@ -8,7 +8,8 @@
     "categories": "Categorias",
     "reports": "Relatórios",
     "audit": "Auditoria",
-    "logout": "Terminar sessão"
+    "logout": "Terminar sessão",
+    "website": "Visitar site"
   },
   "common": {
     "save": "Guardar",
@@ -35,7 +36,8 @@
     "all": "Todos",
     "clear": "Limpar",
     "noData": "Ainda não há dados",
-    "noDescription": "Sem descrição"
+    "noDescription": "Sem descrição",
+    "userMenu": "Menu do utilizador"
   },
   "auth": {
     "login": "Iniciar sessão",
@@ -58,13 +60,15 @@
     "errorPasswordMismatch": "As palavras-passe não coincidem.",
     "demoTitle": "Acesso rápido de demonstração",
     "demoSubtitle": "Um clique, sem registo. Explora a app com diferentes funções.",
-    "roles": {
-      "admin": "Administrador",
-      "adminDescription": "Acesso total: utilizadores, categorias, transações e registo de auditoria.",
-      "finance": "Finanças",
-      "financeDescription": "Relatórios: exportações PDF/Excel e envio por email.",
-      "user": "Utilizador",
-      "userDescription": "Operações do dia a dia com categorias e transações."
+    "demo": {
+      "roles": {
+        "admin": "Administrador",
+        "adminDescription": "Acesso total: utilizadores, categorias, transações e registo de auditoria.",
+        "finance": "Finanças",
+        "financeDescription": "Relatórios: exportações PDF/Excel e envio por email.",
+        "user": "Utilizador",
+        "userDescription": "Operações do dia a dia com categorias e transações."
+      }
     }
   },
   "dashboard": {
@@ -75,7 +79,8 @@
     "transactionCount": "Transações",
     "monthlySeries": "Rendimentos vs despesas mensais",
     "byCategory": "Por categoria",
-    "noData": "Ainda não há dados para mostrar"
+    "noData": "Ainda não há dados para mostrar",
+    "breakdownAria": "Tipo de desagregação"
   },
   "categories": {
     "title": "Categorias",

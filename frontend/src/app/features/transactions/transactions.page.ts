@@ -14,6 +14,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { map } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { CategoriesService } from '../../core/services/categories.service';
@@ -59,6 +62,7 @@ export class TransactionsPage {
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly dialog = inject(MatDialog);
+  private readonly breakpoints = inject(BreakpointObserver);
 
   protected readonly loading = signal(true);
   protected readonly transactions = signal<Transaction[]>([]);
@@ -67,6 +71,14 @@ export class TransactionsPage {
   protected readonly page = signal(1);
   protected readonly pageSize = signal(10);
   protected readonly canMutate = computed(() => this.auth.canMutate());
+
+  /** True on handset — renders card list instead of the table (AGENTS.md §10). */
+  private readonly isHandset = toSignal(
+    this.breakpoints.observe([Breakpoints.Handset]).pipe(map((x) => x.matches)),
+    { initialValue: false },
+  );
+
+  protected readonly isHandsetLayout = computed(() => this.isHandset());
 
   protected readonly filterForm = new FormGroup({
     type: new FormControl<TransactionType | null>(null),

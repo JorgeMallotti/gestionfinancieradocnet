@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -7,6 +7,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DatePipe, SlicePipe } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { map } from 'rxjs';
 
 import { AuditService } from '../../core/services/audit.service';
 import { AuditLogEntry } from '../../core/models';
@@ -36,6 +39,7 @@ import { extractError } from '../../shared/utils/errors';
 export class AuditPage {
   private readonly service = inject(AuditService);
   private readonly toast = inject(ToastService);
+  private readonly breakpoints = inject(BreakpointObserver);
 
   protected readonly loading = signal(true);
   protected readonly entries = signal<AuditLogEntry[]>([]);
@@ -44,6 +48,14 @@ export class AuditPage {
   protected readonly pageSize = signal(20);
 
   protected readonly displayedColumns = ['createdAt', 'entity', 'action', 'userId', 'ipAddress'];
+
+  /** True on handset — renders card list instead of the table (AGENTS.md §10). */
+  private readonly isHandset = toSignal(
+    this.breakpoints.observe([Breakpoints.Handset]).pipe(map((x) => x.matches)),
+    { initialValue: false },
+  );
+
+  protected readonly isHandsetLayout = computed(() => this.isHandset());
 
   constructor() {
     void this.load();

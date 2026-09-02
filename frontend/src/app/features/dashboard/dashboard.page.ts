@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration } from 'chart.js';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -13,6 +13,7 @@ import { DecimalPipe } from '@angular/common';
 
 import { ChartComponent } from '../../shared/components/chart.component';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { ThemeService } from '../../core/services/theme.service';
 import {
   CategoryBreakdown,
   DashboardSummary,
@@ -45,6 +46,8 @@ export class DashboardPage {
   private readonly dashboard = inject(DashboardService);
   private readonly toast = inject(ToastService);
   private readonly breakpoints = inject(BreakpointObserver);
+  private readonly themeService = inject(ThemeService);
+  private readonly translate = inject(TranslateService);
 
   protected readonly loading = signal(true);
   protected readonly summary = signal<DashboardSummary | null>(null);
@@ -58,6 +61,7 @@ export class DashboardPage {
   );
 
   protected readonly isHandsetLayout = computed(() => this.isHandset());
+  protected readonly isDark = computed(() => this.themeService.current() === 'dark');
 
   constructor() {
     void this.load();
@@ -68,9 +72,18 @@ export class DashboardPage {
     return balance >= 0 ? 'var(--mat-sys-primary)' : 'var(--mat-sys-error)';
   });
 
+  /** Readable Chart.js text/grid colors for the current theme (WCAG). */
+  private readonly chartPalette = computed(() =>
+    this.isDark()
+      ? { text: '#e0e0e0', grid: 'rgba(255, 255, 255, 0.08)' }
+      : { text: '#424242', grid: 'rgba(0, 0, 0, 0.08)' },
+  );
+
   protected readonly monthlyChart = computed<ChartConfiguration | null>(() => {
     const points = this.monthly();
     if (points.length === 0) return null;
+
+    const colors = this.chartPalette();
 
     return {
       type: 'bar',
@@ -78,13 +91,13 @@ export class DashboardPage {
         labels: points.map((p) => `${p.year}-${String(p.month).padStart(2, '0')}`),
         datasets: [
           {
-            label: 'Income',
+            label: this.translate.instant('transactions.income'),
             data: points.map((p) => p.income),
             backgroundColor: '#4caf50',
             borderRadius: 4,
           },
           {
-            label: 'Expenses',
+            label: this.translate.instant('transactions.expense'),
             data: points.map((p) => p.expenses),
             backgroundColor: '#f44336',
             borderRadius: 4,
@@ -94,7 +107,13 @@ export class DashboardPage {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } },
+        plugins: {
+          legend: { position: 'bottom', labels: { color: colors.text } },
+        },
+        scales: {
+          x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+          y: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+        },
       },
     };
   });
@@ -102,6 +121,8 @@ export class DashboardPage {
   protected readonly breakdownChart = computed<ChartConfiguration | null>(() => {
     const rows = this.breakdown();
     if (rows.length === 0) return null;
+
+    const colors = this.chartPalette();
 
     return {
       type: 'doughnut',
@@ -117,7 +138,9 @@ export class DashboardPage {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { position: 'right' } },
+        plugins: {
+          legend: { position: 'right', labels: { color: colors.text } },
+        },
       },
     };
   });
@@ -159,19 +182,19 @@ export class DashboardPage {
   }
 }
 
-/** Generates a stable categorical palette for the doughnut chart. */
+/** Generates a stable categorical palette for the doughnut chart (≥ 3:1 contrast). */
 function palette(count: number): string[] {
   const colors = [
-    '#1e88e5',
-    '#43a047',
-    '#fb8c00',
-    '#e53935',
-    '#8e24aa',
-    '#00acc1',
-    '#d81b60',
-    '#3949ab',
-    '#fdd835',
-    '#6d4c41',
+    '#1e88e5', // blue 600
+    '#43a047', // green 600
+    '#f57c00', // orange 700
+    '#e53935', // red 600
+    '#8e24aa', // purple 600
+    '#00acc1', // cyan 600
+    '#d81b60', // pink 600
+    '#3949ab', // indigo 600
+    '#f9a825', // yellow 800
+    '#6d4c41', // brown 600
   ];
   return Array.from({ length: count }, (_, i) => colors[i % colors.length]);
 }

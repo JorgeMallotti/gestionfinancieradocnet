@@ -72,11 +72,11 @@ The MVP demo ships with a seeded demo company (**Acme Demo SL**) and three
 accounts — one per role — so you can explore the app with a single click from
 the login page:
 
-| Key      | Email                     | Role    | Can do                                                        |
-| -------- | ------------------------- | ------- | ------------------------------------------------------------- |
-| `admin`  | `demo.admin@gestfin.local`  | Admin   | Everything: users, categories, transactions, audit log        |
-| `finance`| `demo.finance@gestfin.local`| Finance | Reports: PDF/Excel exports and email delivery                 |
-| `user`   | `demo.user@gestfin.local`   | User    | Day-to-day operations on categories and transactions          |
+| Key       | Email                        | Role    | Can do                                                 |
+| --------- | ---------------------------- | ------- | ------------------------------------------------------ |
+| `admin`   | `demo.admin@gestfin.local`   | Admin   | Everything: users, categories, transactions, audit log |
+| `finance` | `demo.finance@gestfin.local` | Finance | Reports: PDF/Excel exports and email delivery          |
+| `user`    | `demo.user@gestfin.local`    | User    | Day-to-day operations on categories and transactions   |
 
 The shared demo password (`Demo:Password` config, default `Passw0rd!123`) lives
 **only in the backend** — the public API (`GET /api/auth/demo-accounts`) exposes

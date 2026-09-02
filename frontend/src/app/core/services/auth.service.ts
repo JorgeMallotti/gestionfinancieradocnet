@@ -66,10 +66,7 @@ export class AuthService {
   /** One-click demo login — the credentials never leave the backend. */
   async demoLogin(account: string): Promise<AuthResponse> {
     const auth = await firstValueFrom(
-      this.http.post<AuthResponse>(
-        `${environment.apiBaseUrl}/auth/demo-login`,
-        { account },
-      ),
+      this.http.post<AuthResponse>(`${environment.apiBaseUrl}/auth/demo-login`, { account }),
     );
     this.setSession(auth);
     return auth;

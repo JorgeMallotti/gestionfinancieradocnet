@@ -7,6 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { map } from 'rxjs';
 
 import { CategoriesService } from '../../core/services/categories.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -42,10 +45,19 @@ export class CategoriesPage {
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly dialog = inject(MatDialog);
+  private readonly breakpoints = inject(BreakpointObserver);
 
   protected readonly loading = signal(true);
   protected readonly categories = signal<Category[]>([]);
   protected readonly canMutate = computed(() => this.auth.canMutate());
+
+  /** True on handset — renders card list instead of the table (AGENTS.md §10). */
+  private readonly isHandset = toSignal(
+    this.breakpoints.observe([Breakpoints.Handset]).pipe(map((x) => x.matches)),
+    { initialValue: false },
+  );
+
+  protected readonly isHandsetLayout = computed(() => this.isHandset());
 
   protected readonly displayedColumns = computed(() =>
     this.canMutate()

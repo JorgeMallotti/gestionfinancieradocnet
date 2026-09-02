@@ -22,6 +22,54 @@
   overflow-x: auto;
 }
 
+/* ── Handset card list (AGENTS.md §10: cards instead of a scrollable table) ── */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cat-card {
+  mat-card-content {
+    padding: 16px;
+  }
+}
+
+.cat-card-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cat-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cat-card-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.cat-card-desc {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+  word-break: break-word;
+}
+
+.cat-card-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .actions-cell {
   display: flex;
   gap: 4px;

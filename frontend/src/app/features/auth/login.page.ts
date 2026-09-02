@@ -66,12 +66,15 @@ export class LoginPage {
     }
   }
 
-  protected roleLabel(role: string): string {
-    return this.translate.instant(`auth.demo.roles.${role.toLowerCase()}`);
+  /** Returns the i18n KEY for a role label — the template pipes it through
+   *  `translate`, which reacts to language changes and late-loaded files
+   *  (translate.instant() here would render the raw key during a race). */
+  protected roleLabelKey(role: string): string {
+    return `auth.demo.roles.${role.toLowerCase()}`;
   }
 
-  protected roleDescription(role: string): string {
-    return this.translate.instant(`auth.demo.roles.${role.toLowerCase()}Description`);
+  protected roleDescriptionKey(role: string): string {
+    return `auth.demo.roles.${role.toLowerCase()}Description`;
   }
 
   async quickLogin(key: string): Promise<void> {

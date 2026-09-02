@@ -23,8 +23,10 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 
+  // Handset: one column — 2 cramped columns force horizontal scroll
+  // (AGENTS.md §10: mobile-first, no fixed widths).
   &.handset {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -43,11 +45,11 @@
   opacity: 0.85;
 
   &.income {
-    color: #4caf50;
+    color: var(--sem-success);
   }
 
   &.expense {
-    color: #f44336;
+    color: var(--sem-error);
   }
 }
 
@@ -62,11 +64,19 @@
   white-space: nowrap;
 
   &.income {
-    color: #2e7d32;
+    color: var(--sem-success);
   }
 
   &.expense {
-    color: #c62828;
+    color: var(--sem-error);
+  }
+}
+
+/* Handset: allow long amounts to wrap instead of overflowing */
+@media (max-width: 599px) {
+  .kpi-value {
+    font-size: 1.2rem;
+    white-space: normal;
   }
 }
 

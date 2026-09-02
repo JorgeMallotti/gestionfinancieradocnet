@@ -55,7 +55,7 @@
             </mat-card-header>
             <mat-card-content>
                 @if (monthlyChart(); as chart) {
-                <app-chart [config]="chart" />
+                <app-chart [config]="chart" [theme]="isDark() ? 'dark' : 'light'" />
                 } @else {
                 <p class="empty">{{ 'dashboard.noData' | translate }}</p>
                 }
@@ -67,7 +67,7 @@
                 <mat-card-title>{{ 'dashboard.byCategory' | translate }}</mat-card-title>
                 <mat-card-actions>
                     <mat-button-toggle-group [value]="breakdownType()" (valueChange)="switchBreakdownType($event)"
-                        aria-label="Breakdown type">
+                        [attr.aria-label]="'dashboard.breakdownAria' | translate">
                         <mat-button-toggle value="Income">{{ 'transactions.income' | translate }}</mat-button-toggle>
                         <mat-button-toggle value="Expense">{{ 'transactions.expense' | translate }}</mat-button-toggle>
                     </mat-button-toggle-group>
@@ -75,7 +75,7 @@
             </mat-card-header>
             <mat-card-content>
                 @if (breakdownChart(); as chart) {
-                <app-chart [config]="chart" />
+                <app-chart [config]="chart" [theme]="isDark() ? 'dark' : 'light'" />
                 } @else {
                 <p class="empty">{{ 'dashboard.noData' | translate }}</p>
                 }

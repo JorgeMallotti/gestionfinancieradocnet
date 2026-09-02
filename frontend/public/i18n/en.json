@@ -8,7 +8,8 @@
     "categories": "Categories",
     "reports": "Reports",
     "audit": "Audit log",
-    "logout": "Log out"
+    "logout": "Log out",
+    "website": "Visit website"
   },
   "common": {
     "save": "Save",
@@ -35,7 +36,8 @@
     "all": "All",
     "clear": "Clear",
     "noData": "No data yet",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "userMenu": "User menu"
   },
   "auth": {
     "login": "Log in",
@@ -58,13 +60,15 @@
     "errorPasswordMismatch": "Passwords do not match.",
     "demoTitle": "Quick demo access",
     "demoSubtitle": "One click, no registration. Explore the app with different roles.",
-    "roles": {
-      "admin": "Administrator",
-      "adminDescription": "Full access: users, categories, transactions and the audit log.",
-      "finance": "Finance",
-      "financeDescription": "Reports: PDF/Excel exports and email delivery.",
-      "user": "User",
-      "userDescription": "Day-to-day operations on categories and transactions."
+    "demo": {
+      "roles": {
+        "admin": "Administrator",
+        "adminDescription": "Full access: users, categories, transactions and the audit log.",
+        "finance": "Finance",
+        "financeDescription": "Reports: PDF/Excel exports and email delivery.",
+        "user": "User",
+        "userDescription": "Day-to-day operations on categories and transactions."
+      }
     }
   },
   "dashboard": {
@@ -75,7 +79,8 @@
     "transactionCount": "Transactions",
     "monthlySeries": "Monthly income vs expenses",
     "byCategory": "By category",
-    "noData": "No data to display yet"
+    "noData": "No data to display yet",
+    "breakdownAria": "Breakdown type"
   },
   "categories": {
     "title": "Categories",

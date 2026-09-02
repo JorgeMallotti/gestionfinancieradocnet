@@ -12,7 +12,8 @@
     <!-- Filters -->
     <mat-card>
         <mat-card-content>
-            <form [formGroup]="filterForm" class="filters" (ngSubmit)="applyFilters()">
+            <form [formGroup]="filterForm" class="filters" [class.handset]="isHandsetLayout()"
+                (ngSubmit)="applyFilters()">
                 <mat-form-field appearance="outline">
                     <mat-label>{{ 'transactions.type' | translate }}</mat-label>
                     <mat-select formControlName="type">
@@ -63,6 +64,55 @@
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
+    <!-- Handset: card list (no horizontal scroll — AGENTS.md §10) -->
+    @if (isHandsetLayout()) {
+    <div class="card-list">
+        @for (tx of transactions(); track tx.id) {
+        <mat-card class="tx-card">
+            <mat-card-content>
+                <div class="tx-card-main">
+                    <div class="tx-card-left">
+                        <div class="tx-card-date">{{ tx.date | date: 'yyyy-MM-dd' }}</div>
+                        <div class="tx-card-category">{{ tx.categoryName }}</div>
+                        @if (tx.description) {
+                        <div class="tx-card-desc">{{ tx.description }}</div>
+                        }
+                    </div>
+                    <div class="tx-card-right">
+                        <mat-chip class="chip" [class.chip-income]="tx.type === 'Income'"
+                            [class.chip-expense]="tx.type === 'Expense'">
+                            {{ typeLabel(tx.type) | translate }}
+                        </mat-chip>
+                        <div class="tx-card-amount" [class.amount-income]="tx.type === 'Income'"
+                            [class.amount-expense]="tx.type === 'Expense'">
+                            {{ tx.amount | number: '1.2-2' }} {{ tx.currency }}
+                        </div>
+                    </div>
+                </div>
+                @if (canMutate()) {
+                <div class="tx-card-actions">
+                    <button mat-stroked-button (click)="openEdit(tx)">
+                        <mat-icon>edit</mat-icon>
+                        {{ 'common.edit' | translate }}
+                    </button>
+                    <button mat-stroked-button color="warn" (click)="confirmDelete(tx)">
+                        <mat-icon>delete</mat-icon>
+                        {{ 'common.delete' | translate }}
+                    </button>
+                </div>
+                }
+            </mat-card-content>
+        </mat-card>
+        } @empty {
+        @if (!loading()) {
+        <p class="empty">{{ 'common.noData' | translate }}</p>
+        }
+        }
+    </div>
+
+    <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageSizeOptions]="[5, 10, 25, 50]"
+        [pageIndex]="page() - 1" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
+    } @else {
     <!-- Table -->
     <mat-card>
         <mat-card-content class="table-wrapper">
@@ -126,5 +176,5 @@
             <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageSizeOptions]="[5, 10, 25, 50]"
                 [pageIndex]="page() - 1" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
         </mat-card-content>
-    </mat-card>
+    </mat-card> }
 </div>
