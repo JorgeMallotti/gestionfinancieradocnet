@@ -211,10 +211,23 @@ try
     // Demo quick access seeding — no-op when Demo:Enabled=false. Runs once at
     // startup with NO tenant (request context), so the multi-tenant query
     // filters are neutral. Idempotent: existing accounts/data are left intact.
+    //
+    // Seeding is best-effort and data-recoverable: a failure here must NOT take
+    // the API down. This block runs BEFORE app.Run(), so an unhandled exception
+    // would kill the host before Kestrel ever listens — the platform then serves
+    // a permanent 503 and nothing is reachable (not even /health) to diagnose.
+    // Log and carry on instead: the next restart retries the seed.
     using (IServiceScope scope = app.Services.CreateScope())
     {
         var demoSeeder = scope.ServiceProvider.GetRequiredService<DemoSeeder>();
-        await demoSeeder.SeedAsync(CancellationToken.None);
+        try
+        {
+            await demoSeeder.SeedAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Demo seeding failed — the API will start without demo data.");
+        }
     }
 
     app.Run();

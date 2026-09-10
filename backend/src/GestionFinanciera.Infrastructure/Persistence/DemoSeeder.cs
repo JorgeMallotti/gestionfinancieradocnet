@@ -243,12 +243,37 @@ public sealed class DemoSeeder(
                 return;
         }
 
-        var categories = BankCategories
+        // ── Category catalog (natural key: CompanyId + Name) ────────────────
+        // The catalog is protected by a unique index (IX_Categories_CompanyId_Name),
+        // so it must be upserted by name — never inserted blindly. A blind insert
+        // breaks the second run: a demo reset wipes movements but not categories,
+        // so the empty-movements guard above passes and the INSERT collides,
+        // killing the host at startup. Reuse what exists, add only what's missing.
+        List<Category> existingCategories = await dbContext.Categories
+            .Where(c => c.CompanyId == companyId)
+            .ToListAsync(ct);
+
+        Dictionary<string, Category> categoriesByName = existingCategories
+            .ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+
+        List<Category> newCategories = BankCategories
+            .Where(c => !categoriesByName.ContainsKey(c.Name))
             .Select(c => new Category { CompanyId = companyId, Name = c.Name, Description = c.Description })
             .ToList();
 
-        dbContext.Categories.AddRange(categories);
-        await dbContext.SaveChangesAsync(ct);
+        if (newCategories.Count > 0)
+        {
+            dbContext.Categories.AddRange(newCategories);
+            await dbContext.SaveChangesAsync(ct);
+
+            foreach (Category category in newCategories)
+                categoriesByName[category.Name] = category;
+
+            logger.LogInformation("Seeded {Count} missing demo categories.", newCategories.Count);
+        }
+
+        // The full catalog in a stable order — existing rows and fresh ones alike.
+        var categories = BankCategories.Select(c => categoriesByName[c.Name]).ToList();
 
         var accounts = await dbContext.ClientAccounts
             .Where(a => a.CompanyId == companyId)
