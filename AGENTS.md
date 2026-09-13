@@ -623,9 +623,64 @@ every endpoint:
 - Local dev: **user-secrets** (`dotnet user-secrets set ...`) — never commit real values.
 - `appsettings.json` committed with placeholders only; `appsettings.Development.json` may
   hold dev-only, non-sensitive values.
-- Production: **Azure App Settings** (or Key Vault) — the agent MAY edit the _key names_
+- Production: **Azure Key Vault** referenced from **Azure App Settings** with
+  `@Microsoft.KeyVault(SecretUri=...)`. The App Setting holds **only the reference**, never
+  the value — that is why managing it via CLI is safe. The agent MAY edit the _key names_
   in documentation and `.env.example`-style templates, never real values.
 - **NEVER** commit `appsettings.Production.json` with real values, `.env`, or key files.
+
+### Secret Access via Cloud CLI (HARD RULE — Azure CLI)
+
+**The agent MUST NEVER run a command that can print the value of a secret, an application
+setting, a connection string, or a Key Vault secret — in any environment and against any
+cloud.** Reading a secret value is **never** required to complete a task: the agent works
+exclusively with **references, names and metadata**.
+
+**FORBIDDEN — the agent MUST NOT execute these (or the equivalent for another cloud):**
+
+| Forbidden command                                                                            | Why                                                              |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `az keyvault secret show ...`                                                                | fetches and prints the secret value                              |
+| `az keyvault secret download ...`                                                            | same                                                             |
+| `az keyvault secret set --value ...`                                                         | puts the secret in the command line → shell history + transcript |
+| `az keyvault key show` / `azure keyvault certificate show --query "cer"`                     | prints key material                                              |
+| `az webapp config appsettings list` **without** a `--query` limited to `.name`               | prints every setting in clear text                               |
+| `az webapp config connection-string list`                                                    | prints connection strings                                        |
+| `az webapp config container show`, `az containerapp ... show` (env vars)                     | prints environment variables                                     |
+| `dotnet user-secrets list`, `Get-ChildItem env:`, `printenv`, `set` (bare)                   | prints secret values                                             |
+| `docker inspect` on a container holding secrets, `docker compose config`                     | prints environment variables                                     |
+| reading `.env`, `appsettings.Production.json`, the user-secrets store, `.pfx`, `cookies.txt` | secret material on disk                                          |
+| any `--query` / `--output` expression whose **result** can contain a secret value            | `--query` does NOT sanitize output                               |
+
+**ALLOWED — metadata, structure, and writes that contain no secret:**
+
+- `az keyvault secret list --query "[].name"` (names and attributes only)
+- `az webapp config appsettings list --query "[].name"` or `--query "[].{name:name}"`
+- `az keyvault show` / `az keyvault list` (vault metadata: SKU, RBAC mode, firewall)
+- `az role assignment list --scope <vaultId> --assignee <objectId>` (permissions audit)
+- `az webapp identity show` / `az webapp identity assign` (managed identity)
+- writing **Key Vault references** — `@Microsoft.KeyVault(SecretUri=...)` contains no secret
+- the ARM endpoint `.../config/configreferences/appsettings` — reports only **whether** a
+  reference resolved, never a value
+
+**Verifying a secret WITHOUT ever reading it** — use one of these instead:
+
+1. **Boolean/shape projection** (never the value itself), e.g.
+   `--query "[?name=='X'].{ref:starts_with(value, '@Microsoft.KeyVault'), len:length(value)}"`.
+2. **End-to-end behaviour**: call an endpoint that actually _uses_ the secret and assert the
+   HTTP status. ⚠️ A `200` on `/health` is **not** proof — it may not touch the database nor
+   sign a token. Prefer an endpoint that exercises both (e.g. a login endpoint).
+3. **`configreferences/appsettings`** to confirm the platform resolved a reference.
+
+**If a secret is ever exposed** (printed in the terminal, written to a log, or included in
+the conversation/transcript), the agent MUST: (a) report it explicitly in the
+**Security Warnings** section at the end of the session, (b) treat it as compromised and
+rotate it, and (c) never repeat the pattern that caused it.
+
+**Also forbidden:** asking the user to paste a secret into the chat, and using any tool
+whose answer travels through the model (`vscode_askQuestions` included) to collect secret
+values. If a secret must be stored, the agent instructs the user to type it **directly in
+the Azure portal or terminal**.
 
 ### Audit Trail
 
@@ -663,6 +718,13 @@ User → https://finanzas.<jorge-domain> (Static Web Apps / frontend)
 **Hard rules:**
 
 - **Never** commit secrets; CI/CD reads them from GitHub Secrets / Azure App Settings.
+- **Secrets in production live in Azure Key Vault**, referenced from App Settings with
+  `@Microsoft.KeyVault(SecretUri=https://<vault>.vault.azure.net/secrets/<Name>/)` —
+  **versionless** (trailing slash) so rotation is automatic. The App Service reaches the
+  vault through its **system-assigned managed identity** (role `Key Vault Secrets User`);
+  the human operator holds `Key Vault Secrets Officer`. The agent MUST NOT read the values
+  (§13 — Secret Access via Cloud CLI). Key Vault secret names allow only letters, digits
+  and hyphens (`__` is invalid) → convention: app setting `A__B` ⇢ secret `A--B`.
 - **Backend deploy** (GitHub Actions → App Service):
   - Build + `dotnet test` → publish → deploy slot
   - Apply migrations with the generated SQL script (or approved startup runner) **before**
@@ -819,6 +881,8 @@ The agent MUST request explicit permission before modifying:
 - `appsettings.json` / `appsettings.Production.json` with real values — **never read or
   edit real secrets**; placeholders/templates are allowed (e.g., `appsettings.example.json`)
 - `user-secrets` store — never read or print
+- **Azure Key Vault secrets — never read or print the value** (see §13: only names,
+  metadata and references may be touched; `az keyvault secret show` is forbidden)
 - `.env` / `.env.local` — never read
 - `Migrations/*` — applied migration files (never edit/delete/rename)
 - `package-lock.json`, `packages.lock.json` — regenerate, never hand-edit
@@ -844,6 +908,7 @@ Before finishing any task, the agent MUST verify:
 - [ ] **i18n**: All user-facing text via `@ngx-translate`? en/es/pt in sync?
 - [ ] **Optimistic Updates**: No unnecessary refetch after mutation? Backend returns full resources?
 - [ ] **Security**: FluentValidation + strict JSON? CORS explicit origins? Refresh cookie httpOnly/SameSite? Rate limiting? ProblemDetails without stack traces? No secrets committed?
+- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
 - [ ] **Audit**: Sensitive mutations write AuditLog?
 - [ ] **Tests**: Unit + integration tests for new code? Do they pass?
 - [ ] **Academic**: Did I include the "📚 Aprende con esto" section (§15)?
