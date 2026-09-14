@@ -650,15 +650,26 @@ every endpoint:
 
 ## 14. Deployment Rules (Azure)
 
-Target architecture (Jorge deploys; the agent guides and prepares everything):
+Target architecture (Jorge deploys; the agent guides and prepares everything). The
+concrete, deployed values for the demo are:
 
 ```
-User → https://finanzas.<jorge-domain> (Static Web Apps / frontend)
-              ↓ HTTPS
-       Backend: Azure App Service (Windows or Linux) → Azure SQL
+Landing (www.mallottidigital.com) ──iframe (same-site)──┐
+                                                        ▼
+User → https://finanzas.mallottidigital.com  (Static Web Apps, Free — SWA `swa-gestfin-mallotti`)
+              ↓ HTTPS  ·  CORS allowlist (exact origins, credentials)
+       https://api.mallottidigital.com  (App Service `app-gestfin-mallotti`, Linux .NET 10, B1 + Always On)
               ↓
-       Secrets: App Settings / Key Vault  |  Logs: Application Insights
+       Azure SQL `sqldb-gestfin-prod` (Basic DTU) → RG `rg-gestfin-prod` (Sweden Central)
+              ↓
+       Secrets: Azure Key Vault `kv-gestfin-prod`  |  Logs: Application Insights
 ```
+
+⚠️ **Frontend and backend MUST share the same registrable domain** (`finanzas.` + `api.` under
+`mallottidigital.com`). The refresh token is an httpOnly cookie with **`SameSite=Strict`**:
+under different registrable domains the cookie is never sent → refresh 401 → session lost.
+The same rule makes the landing's **iframe embedding work**, because `www.` and `finanzas.`
+are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies are blocked).
 
 **Hard rules:**
 
@@ -670,15 +681,28 @@ User → https://finanzas.<jorge-domain> (Static Web Apps / frontend)
 - **Frontend deploy** (GitHub Actions → Static Web Apps):
   - `npm ci` → `ng build --configuration production` → publish `dist/`
   - `environment.prod.ts` contains the public API base URL only (no secrets).
+  - **`fileReplacements` is mandatory** in `angular.json` → `configurations.production`
+    (`src/environments/environment.ts` ⇢ `environment.prod.ts`). Without it the production
+    bundle silently keeps the dev value `apiBaseUrl: '/api'` and `environment.prod.ts` is
+    **dead code** → the app calls its own host and every API request 404s.
+  - `public/staticwebapp.config.json` ships with the build: `navigationFallback` → `/index.html`
+    (deep links survive F5) + security headers. Its CSP pins the inline anti-FOUC script in
+    `index.html` with a **sha256 hash** → changing that script requires recomputing the hash.
 - **Azure SQL**:
-  - Connection string lives in App Settings (`AZURE_SQL_CONNECTIONSTRING`) — never in code.
+  - Connection string lives in Key Vault, referenced from App Settings — never in code.
   - Enable Entra ID auth as an option; firewall restricted to App Service outbound IPs or
     "Allow Azure services".
   - Backups: automatic geo-redundant for Basic+; verify retention settings.
-- **Domain**: the frontend gets a **subdomain** of Jorge's existing domain; HTTPS via
-  Static Web Apps custom domains (automatic cert). Backend gets its own
-  `api.<subdomain>` or uses the App Service default domain — CORS allowlist must contain
-  exactly the real origins, no wildcards.
+- **Domain**: frontend `https://finanzas.mallottidigital.com` (Static Web Apps custom domain,
+  automatic cert); backend `https://api.mallottidigital.com` (App Service, SNI SSL). Both are
+  subdomains of Jorge's registrable domain — see the diagram above for why. DNS lives in
+  **Cloudflare** and every record must stay **"DNS only" (grey cloud), never "Proxied"**
+  (proxying breaks domain validation and the certificate: 525/526). CORS allowlist contains
+  exactly the real origins (`finanzas.`, the SWA default hostname, `http://localhost:4200`),
+  never wildcards — the SWA default hostname is required because
+  `AuthController.IsSameOriginRequest()` validates `Origin` against that list, so without it
+  the refresh returns 403. No `X-Frame-Options: DENY` on the frontend: `frame-ancestors`
+  in the CSP controls who may embed it (currently the landing).
 - **Health checks**: `/health` endpoint wired to the App Service health check feature;
   `AZURE_APPINSIGHTS_KEY` optional; Serilog → Application Insights sink in prod.
 - Every deploy must be reproducible: same commit → same build (lock dependencies).

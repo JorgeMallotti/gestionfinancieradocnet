@@ -8,13 +8,16 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { credentialsInterceptor } from './core/interceptors/credentials.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    // HTTP with the auth interceptor (Bearer token + automatic refresh on 401).
-    provideHttpClient(withInterceptors([authInterceptor])),
+    // HTTP interceptors — ORDER MATTERS: they run top-down, so `credentialsInterceptor`
+    // sits outermost and still sees the retry/refresh request that `authInterceptor`
+    // issues internally after a 401 (that inner call is what needs the refresh cookie).
+    provideHttpClient(withInterceptors([credentialsInterceptor, authInterceptor])),
     provideAnimationsAsync(),
     // Native DateAdapter for the Material date pickers.
     provideNativeDateAdapter(),
