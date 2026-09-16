@@ -235,6 +235,7 @@ frontend/
 .github/
 └── workflows/
     ├── ci.yml                     # PR + staging: build, tests, lint, format (no Azure access)
+    ├── branch-policy.yml          # PR to main: must come from staging (§9)
     ├── deploy-backend.yml         # main: dotnet publish → App Service (OIDC + manual approval)
     └── deploy-frontend.yml        # main: ng build → Static Web Apps (OIDC + manual approval)
 ```
@@ -445,8 +446,7 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 
 ### Rules
 
-- **NEVER** commit directly to `main` or `staging`.
-- **NEVER** merge your own PRs — always request a review.
+- **NEVER** commit directly to `main` or `staging` — both are protected branches.
 - Branch naming: `feat/add-auth-module`, `fix/login-validation-error`,
   `refactor/transfers-service`, `chore/update-dependencies`, `docs/api-readme`.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/):
@@ -457,8 +457,39 @@ feat/*   → Feature branches. Created from staging. Push allowed.
   - `dotnet format --verify-no-changes` and `ng lint` clean
   - Branch rebased onto latest `staging` (`git rebase staging`)
 - PR to `main` only after `staging` validated (tests + manual QA).
-- Protected branches on GitHub: require PR + 1 approval, dismiss stale approvals,
-  status checks (CI), linear history on `main`.
+
+### Branch protection (what actually enforces the rules above)
+
+GitHub **has no native rule** for "a pull request into `main` must come from
+`staging`", so that rule is enforced as a check: `branch-policy.yml` fails unless
+the source branch is `staging` **and** it belongs to this repository (not a fork),
+and `PR must come from staging` is a required status check on `main`.
+
+**Merging strategy: merge commits, never squash.** History is the record of why
+each change was made, so the individual commits with their rationale are kept.
+This is why **"Require linear history" is deliberately NOT enabled** — it would
+block merge commits and force squash or rebase.
+
+Required status checks: the two `ci.yml` jobs plus `PR must come from staging`.
+
+### Solo maintainer: why there is no required approval
+
+GitHub blocks self-approval (*"Pull request authors cannot approve their own pull
+requests"*) and repository owners can merge without an approval. With a single
+maintainer, a required approval is therefore either a deadlock or a formality —
+it can never be a review by someone else. The controls that **do** work alone are:
+
+| Control                          | Enforced by                                            |
+| -------------------------------- | ------------------------------------------------------ |
+| No direct pushes to `main`       | Require a pull request before merging                  |
+| No broken code reaches `main`    | Required status checks (114 tests, lint, prod build)   |
+| `main` only arrives from `staging` | The `branch-policy.yml` check                        |
+| No history rewriting             | Block force pushes                                     |
+| No accidental branch deletion    | Restrict deletions                                     |
+| A deliberate human pause         | The `production` environment, which **does** allow the maintainer to approve their own deployment |
+
+**When a second maintainer joins:** add `Required approvals: 1`, enable
+*Dismiss stale approvals*, and stop merging your own pull requests.
 
 ---
 
@@ -810,6 +841,7 @@ long-lived secrets.
 | Workflow              | Trigger                                                          | What it does                                                                        |
 | --------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `ci.yml`              | PR to `main`/`staging`, push to `staging`                        | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
+| `branch-policy.yml`   | PR targeting `main`                                              | Fails unless the source branch is `staging` and not a fork (§9). **No secrets.**    |
 | `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
 | `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
 
