@@ -1,0 +1,92 @@
+# Continuous Integration — runs on every pull request and on every push to the
+# integration branch. It has NO Azure access and needs NO secrets: its only job
+# is to prove that the code compiles, the tests pass and the style rules hold
+# before anything reaches `staging` (AGENTS.md §9 and §19).
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+# A new push to the same branch cancels the previous run: there is no point in
+# testing a commit that has already been superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend — build, tests, format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore GestionFinanciera.slnx
+
+      - name: Build (Release)
+        run: dotnet build GestionFinanciera.slnx --configuration Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test tests/GestionFinanciera.UnitTests --configuration Release --no-build
+
+      - name: Integration tests
+        run: dotnet test tests/GestionFinanciera.IntegrationTests --configuration Release --no-build
+
+      # `TreatWarningsAsErrors` is enforced in CI (AGENTS.md §17).
+      - name: Format check
+        run: dotnet format GestionFinanciera.slnx --verify-no-changes --no-restore
+
+  frontend:
+    name: Frontend — lint, tests, production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx ng lint
+
+      # The Angular unit-test builder runs the specs inside a real Chromium
+      # (Vitest browser mode), so the browser binary must exist in the runner.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Unit tests
+        run: npx ng test --browsers=chromium
+
+      # Building the production bundle here catches the `fileReplacements`
+      # class of bug (wrong API base URL shipped to production) before deploy.
+      - name: Production build
+        run: npx ng build --configuration production
