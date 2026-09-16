@@ -1,0 +1,101 @@
+# Dependabot configuration.
+#
+# PURPOSE OF `target-branch: staging`
+# Dependabot opens its pull requests against the default branch (`main`) unless
+# told otherwise. That collides with the branch policy enforced in
+# `.github/workflows/branch-policy.yml`: a pull request whose head is not
+# `staging` fails the `PR must come from staging` check, and because that check is
+# required on `main`, the update would be permanently blocked.
+#
+# Pointing Dependabot at `staging` also matches how the project works: a bump in
+# `frontend/package-lock.json` changes `frontend/**`, which TRIGGERS the frontend
+# deployment. A dependency update must therefore travel the normal route
+# (`feat`/`chore` branch -> `staging` -> CI -> `main`), not jump straight into
+# production.
+#
+# NOTE: Dependabot only reads this file from the repository's DEFAULT branch, so it
+# takes effect once merged into `main`. Until then, updates keep targeting `main`.
+version: 2
+updates:
+  # Angular application: npm dependencies and devDependencies.
+  - package-ecosystem: npm
+    directory: /frontend
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+    groups:
+      # One pull request for the Angular packages, which must move together.
+      angular:
+        patterns:
+          - "@angular/*"
+          - "angular-eslint"
+      # One for the ESLint toolchain, for the same reason.
+      linting:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+      # Everything else: one minor/patch pull request instead of a dozen.
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # .NET solution: NuGet packages.
+  - package-ecosystem: nuget
+    directory: /backend
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+    groups:
+      # Entity Framework Core packages must be updated as a set.
+      entity-framework:
+        patterns:
+          - "Microsoft.EntityFrameworkCore*"
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # The workflows themselves: keeps the `uses:` versions honest.
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies
+
+  # Base images of the local stack (SQL Server).
+  - package-ecosystem: docker
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
