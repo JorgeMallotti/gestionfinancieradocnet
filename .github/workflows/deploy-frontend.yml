@@ -1,0 +1,103 @@
+# Deploys the Angular app to Azure Static Web Apps.
+#
+# TRIGGER: a commit landing on `main`. This repository forbids direct pushes to
+# `main` (AGENTS.md §9) and only accepts merges from `staging` — but a merge IS a
+# `push` event, so this workflow runs right after the pull request is merged.
+# It does NOT run on the pull request itself; only `ci.yml` does.
+# `workflow_dispatch` covers deliberate re-deploys.
+#
+# This file lists ITSELF under `paths`, so editing the pipeline also triggers a
+# run — that is how the pipeline gets tested without touching product code.
+#
+# Authentication is PASSWORDLESS as well: the Static Web Apps CLI is given the
+# resource group and the app name and resolves the deployment token through ARM
+# using the OIDC login performed by `azure/login`. The long-lived deployment
+# token is never copied into GitHub (AGENTS.md §13 and §14).
+name: Deploy frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # required to request the OIDC token from GitHub
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: rg-gestfin-prod
+  AZURE_STATIC_WEB_APP: swa-gestfin-mallotti
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    # Same manual approval gate as the backend deployment.
+    environment:
+      name: production
+      url: https://finanzas.mallottidigital.com
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `--configuration production` applies `fileReplacements`, so the bundle
+      # carries the real API base URL instead of the development value.
+      - name: Production build
+        run: npx ng build --configuration production
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # `--no-use-keychain` avoids the keytar native-module crash seen locally;
+      # the credential comes from the Azure CLI session that `azure/login`
+      # created, which the SWA CLI picks up automatically.
+      - name: Deploy to Static Web Apps
+        run: |
+          npx --yes @azure/static-web-apps-cli@2 deploy ./dist/gestion-financiera-web/browser \
+            --env production \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --app-name "$AZURE_STATIC_WEB_APP" \
+            --subscription-id "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
+            --tenant-id "${{ vars.AZURE_TENANT_ID }}" \
+            --no-use-keychain
+
+      # The build ships `staticwebapp.config.json`, so the deep links and the
+      # security headers are part of the deployment.
+      - name: Smoke test
+        run: |
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://finanzas.mallottidigital.com/)
+            echo "frontend attempt $attempt -> $code"
+            [ "$code" = "200" ] && break
+            sleep 10
+          done
+
+          deep=$(curl -s -o /dev/null -w "%{http_code}" https://finanzas.mallottidigital.com/movements)
+          echo "deep link /movements -> $deep"
+
+          [ "$code" = "200" ] && [ "$deep" = "200" ]

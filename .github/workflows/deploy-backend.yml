@@ -1,0 +1,132 @@
+# Deploys the API to Azure App Service (Linux, .NET 10).
+#
+# TRIGGER: a commit landing on `main`. This repository forbids direct pushes to
+# `main` (AGENTS.md §9) and only accepts merges from `staging` — but a merge IS a
+# `push` event, so this workflow runs right after the pull request is merged.
+# It does NOT run on the pull request itself; only `ci.yml` does.
+# `workflow_dispatch` covers deliberate re-deploys.
+#
+# This file lists ITSELF under `paths`, so editing the pipeline also triggers a
+# run — that is how the pipeline gets tested without touching product code.
+#
+# Authentication is PASSWORDLESS: GitHub mints a short-lived OIDC token for this
+# workflow run, Microsoft Entra ID exchanges it for an Azure access token, and
+# the workflow never handles a secret — there is no publish profile and no
+# client secret anywhere (AGENTS.md §13 and §14).
+name: Deploy backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+# Never run two deployments at the same time: the App Service B1 plan has no
+# deployment slots, so a concurrent deploy would fight over the same instance.
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # required to request the OIDC token from GitHub
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: rg-gestfin-prod
+  AZURE_APP_NAME: app-gestfin-mallotti
+
+jobs:
+  deploy:
+    name: Publish and deploy
+    runs-on: ubuntu-latest
+    # The `production` environment is the manual approval gate: the job pauses
+    # here until a reviewer approves it in the GitHub UI.
+    environment:
+      name: production
+      url: https://api.mallottidigital.com
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore GestionFinanciera.slnx
+
+      # Never deploy code that does not pass its own tests.
+      - name: Build and test
+        run: |
+          dotnet build GestionFinanciera.slnx --configuration Release --no-restore
+          dotnet test tests/GestionFinanciera.UnitTests --configuration Release --no-build
+          dotnet test tests/GestionFinanciera.IntegrationTests --configuration Release --no-build
+
+      # Produces the idempotent SQL script for THIS commit, so the database can
+      # be brought up to date in a controlled way. `EnsureCreated()` is
+      # forbidden and interactive `database update` is never used in production
+      # (AGENTS.md §7).
+      - name: Generate idempotent migration script
+        run: |
+          dotnet tool install --global dotnet-ef
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet ef migrations script --idempotent \
+            --project src/GestionFinanciera.Infrastructure \
+            --startup-project src/GestionFinanciera.Api \
+            --output "$GITHUB_WORKSPACE/migrations.sql"
+
+      - name: Upload migration script
+        uses: actions/upload-artifact@v7
+        with:
+          name: migrations-${{ github.sha }}
+          path: migrations.sql
+          retention-days: 30
+
+      - name: Publish (Release)
+        run: >-
+          dotnet publish src/GestionFinanciera.Api/GestionFinanciera.Api.csproj
+          --configuration Release --no-restore
+          --output "${{ runner.temp }}/publish"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # The runner is Linux, so the .zip built here uses forward slashes and
+      # Kudu accepts it. The Windows/PowerShell 5.1 `Compress-Archive` trap
+      # (backslash paths -> HTTP 400) cannot happen on this runner.
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_APP_NAME }}
+          package: ${{ runner.temp }}/publish
+
+      # A 200 on /health only proves the process started: it does not touch the
+      # database nor sign a token. The demo login exercises the whole data path
+      # (SQL Server auth + JWT signing key) end to end (AGENTS.md §13).
+      - name: Smoke test (health + data path)
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://api.mallottidigital.com/health)
+            echo "health attempt $attempt -> $code"
+            [ "$code" = "200" ] && break
+            sleep 15
+          done
+
+          login=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://api.mallottidigital.com/api/auth/demo-login \
+            -H "Content-Type: application/json" \
+            -d '{"account":"admin"}')
+          echo "demo-login -> $login"
+
+          [ "$code" = "200" ] && [ "$login" = "200" ]

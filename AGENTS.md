@@ -9,7 +9,7 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 > This file adapts the security best practices from the previous project's AGENTS.md
 > (NestJS/Next.js) to the new stack. Nothing from the old security rules was dropped —
 > each rule was rewritten for .NET/Angular. New sections: Tenancy, Azure Deployment,
-> and Academic Explanation (Jorge learns while building).
+> and Decision Records (the rationale behind each change).
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 | 12  | [State Management & Optimistic Updates](#12-state-management--optimistic-updates)                   |
 | 13  | [Security Constraints (Hard Rules)](#13-security-constraints-hard-rules)                            |
 | 14  | [Deployment Rules (Azure)](#14-deployment-rules-azure)                                              |
-| 15  | [Academic Explanation (Mandatory — Jorge Learns)](#15-academic-explanation-mandatory--jorge-learns) |
+| 15  | [Decision Records (Every Change Documents Its Rationale)](#15-decision-records-every-change-documents-its-rationale) |
 | 16  | [Agent Change Protocol](#16-agent-change-protocol)                                                  |
 | 17  | [Coding Standards](#17-coding-standards)                                                            |
 | 18  | [Protected Files (Agent MUST NOT Modify)](#18-protected-files-agent-must-not-modify)                |
@@ -45,7 +45,7 @@ Before writing a single line of code, read:
 - If touching the database: the EF Core `DbContext` and the `Migrations/` folder
 - If creating frontend components: existing patterns in `frontend/src/app/`
 - If modifying an existing backend feature: the full feature folder
-- This file again, especially §15 (Academic Explanation) — every change is also a lesson
+- This file again, especially §15 (Decision Records) — every change leaves a rationale behind
 
 ---
 
@@ -55,10 +55,10 @@ Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit appr
 
 | Decision          | Choice                                                                                                 | Why                                                              |
 | ----------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Employability in Portugal; modern, supported, corporate standard |
+| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Modern LTS: a supported, long-term-service release and the current corporate standard |
 | Frontend          | **Angular 21** (standalone components) + **Angular Material**                                          | Corporate standard for .NET shops; ready components              |
 | Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod                | Same engine dev/prod (no drift)                                  |
-| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Most requested pattern in .NET job interviews                    |
+| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Keeps the domain free of framework dependencies; the standard for non-trivial .NET systems                    |
 | Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                           | "Corporate level" — what real companies ask for                  |
 | Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                            | Secure; fixes the localStorage token debt of the old project     |
 | Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**         | Bank demo model (Jorge, 2026-09-02)                              |
@@ -75,7 +75,7 @@ Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit appr
 | Frontend state    | **Angular Signals + inject-based services**                                                            | Modern Angular idiom (stable since 17, mature in 21)             |
 | i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                            | Community standard, same pattern as old project                  |
 | Language of code  | English everywhere (code, comments, commits, docs)                                                     | Global standard                                                  |
-| Conversation lang | Academic explanations to Jorge in **his language (es/pt)** — technical terms kept in English           | §15                                                              |
+| Conversation lang | Rationale sections in the owner's language (es/pt); technical terms kept in English           | §15                                                              |
 
 ### 2.1 Product Model — Bank Demo (LOCKED 2026-09-02)
 
@@ -228,6 +228,21 @@ frontend/
     ├── environments/                # environment.ts / environment.prod.ts (API base URL)
     └── styles/                      # Material theme (light/dark), global SCSS
 ```
+
+### Repository root (`.github/`)
+
+```
+.github/
+└── workflows/
+    ├── ci.yml                     # PR + staging: build, tests, lint, format (no Azure access)
+    ├── branch-policy.yml          # PR to main: must come from staging (§9)
+    ├── deploy-backend.yml         # main: dotnet publish → App Service (OIDC + manual approval)
+    └── deploy-frontend.yml        # main: ng build → Static Web Apps (OIDC + manual approval)
+```
+
+`.github/workflows/` is the only path GitHub Actions reads (it is not configurable), so it is an
+explicit exception to the rule below. It holds **workflow YAML only** — never application code,
+scripts or secrets.
 
 **The agent MUST NOT create files outside this structure.**
 
@@ -431,8 +446,7 @@ feat/*   → Feature branches. Created from staging. Push allowed.
 
 ### Rules
 
-- **NEVER** commit directly to `main` or `staging`.
-- **NEVER** merge your own PRs — always request a review.
+- **NEVER** commit directly to `main` or `staging` — both are protected branches.
 - Branch naming: `feat/add-auth-module`, `fix/login-validation-error`,
   `refactor/transfers-service`, `chore/update-dependencies`, `docs/api-readme`.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/):
@@ -443,8 +457,39 @@ feat/*   → Feature branches. Created from staging. Push allowed.
   - `dotnet format --verify-no-changes` and `ng lint` clean
   - Branch rebased onto latest `staging` (`git rebase staging`)
 - PR to `main` only after `staging` validated (tests + manual QA).
-- Protected branches on GitHub: require PR + 1 approval, dismiss stale approvals,
-  status checks (CI), linear history on `main`.
+
+### Branch protection (what actually enforces the rules above)
+
+GitHub **has no native rule** for "a pull request into `main` must come from
+`staging`", so that rule is enforced as a check: `branch-policy.yml` fails unless
+the source branch is `staging` **and** it belongs to this repository (not a fork),
+and `PR must come from staging` is a required status check on `main`.
+
+**Merging strategy: merge commits, never squash.** History is the record of why
+each change was made, so the individual commits with their rationale are kept.
+This is why **"Require linear history" is deliberately NOT enabled** — it would
+block merge commits and force squash or rebase.
+
+Required status checks: the two `ci.yml` jobs plus `PR must come from staging`.
+
+### Solo maintainer: why there is no required approval
+
+GitHub blocks self-approval (*"Pull request authors cannot approve their own pull
+requests"*) and repository owners can merge without an approval. With a single
+maintainer, a required approval is therefore either a deadlock or a formality —
+it can never be a review by someone else. The controls that **do** work alone are:
+
+| Control                          | Enforced by                                            |
+| -------------------------------- | ------------------------------------------------------ |
+| No direct pushes to `main`       | Require a pull request before merging                  |
+| No broken code reaches `main`    | Required status checks (114 tests, lint, prod build)   |
+| `main` only arrives from `staging` | The `branch-policy.yml` check                        |
+| No history rewriting             | Block force pushes                                     |
+| No accidental branch deletion    | Restrict deletions                                     |
+| A deliberate human pause         | The `production` environment, which **does** allow the maintainer to approve their own deployment |
+
+**When a second maintainer joins:** add `Required approvals: 1`, enable
+*Dismiss stale approvals*, and stop merging your own pull requests.
 
 ---
 
@@ -648,6 +693,9 @@ exclusively with **references, names and metadata**.
 | `az webapp config connection-string list`                                                    | prints connection strings                                        |
 | `az webapp config container show`, `az containerapp ... show` (env vars)                     | prints environment variables                                     |
 | `dotnet user-secrets list`, `Get-ChildItem env:`, `printenv`, `set` (bare)                   | prints secret values                                             |
+| `gh auth token`                                                                              | prints the GitHub OAuth token in clear text                      |
+| `gh auth status --show-token`                                                                | same — and `--show-token` is the only reason to use that flag    |
+| reading the `gh` credential store (`hosts.yml`, the OS keyring entry)                        | secret material on disk                                          |
 | `docker inspect` on a container holding secrets, `docker compose config`                     | prints environment variables                                     |
 | reading `.env`, `appsettings.Production.json`, the user-secrets store, `.pfx`, `cookies.txt` | secret material on disk                                          |
 | any `--query` / `--output` expression whose **result** can contain a secret value            | `--query` does NOT sanitize output                               |
@@ -659,6 +707,9 @@ exclusively with **references, names and metadata**.
 - `az keyvault show` / `az keyvault list` (vault metadata: SKU, RBAC mode, firewall)
 - `az role assignment list --scope <vaultId> --assignee <objectId>` (permissions audit)
 - `az webapp identity show` / `az webapp identity assign` (managed identity)
+- `gh auth status` — account, active state and **scopes** only; the CLI masks the token itself
+  (`gho_****`). This is the way to verify that `gh` is usable without reading the credential.
+- `gh pr list`, `gh pr view`, `gh pr create`, `gh pr merge`, `gh run list`, `gh run watch`
 - writing **Key Vault references** — `@Microsoft.KeyVault(SecretUri=...)` contains no secret
 - the ARM endpoint `.../config/configreferences/appsettings` — reports only **whether** a
   reference resolved, never a value
@@ -681,6 +732,20 @@ rotate it, and (c) never repeat the pattern that caused it.
 whose answer travels through the model (`vscode_askQuestions` included) to collect secret
 values. If a secret must be stored, the agent instructs the user to type it **directly in
 the Azure portal or terminal**.
+
+**Delegated CLI access.** The agent normally authenticates nothing itself: the owner runs
+the login flow, and the credential stays in the tool's own store (`az` account cache, `gh`
+keyring). The agent then uses the CLI without ever reading the credential — which is why
+`gh auth status` (masked) is enough to verify it works, and why reading the token is never
+necessary. **Revoke when finished**, e.g. `gh auth logout --hostname github.com --user <user>`.
+
+**Nothing sensitive in anything git keeps.** Committed history is permanent, so secrets
+must never reach it through a side door: not in a commit message, not in a squash/merge
+subject or body, not in a file under version control. Similarly, `AGENTS.md` and the
+`README` are public-facing documents (§4): they may name resources, but never credentials.
+When merging with `gh`, pass an explicit `--subject`/`--body` instead of letting the CLI
+dump a long pull-request description into the permanent commit — a PR body that reads fine
+on the website becomes permanent text in the repository.
 
 ### Audit Trail
 
@@ -705,8 +770,7 @@ the Azure portal or terminal**.
 
 ## 14. Deployment Rules (Azure)
 
-Target architecture (Jorge deploys; the agent guides and prepares everything). The
-concrete, deployed values for the demo are:
+Target architecture. The concrete, deployed values for the demo are:
 
 ```
 Landing (www.mallottidigital.com) ──iframe (same-site)──┐
@@ -769,48 +833,92 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
   `AZURE_APPINSIGHTS_KEY` optional; Serilog → Application Insights sink in prod.
 - Every deploy must be reproducible: same commit → same build (lock dependencies).
 
+### CI/CD — GitHub Actions (passwordless OIDC)
+
+Decided with Jorge on **2026-09-16**: the deployments stop being manual and stop depending on
+long-lived secrets.
+
+| Workflow              | Trigger                                                          | What it does                                                                        |
+| --------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `ci.yml`              | PR to `main`/`staging`, push to `staging`                        | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
+| `branch-policy.yml`   | PR targeting `main`                                              | Fails unless the source branch is `staging` and not a fork (§9). **No secrets.**    |
+| `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
+| `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
+
+**Hard rules:**
+
+- **The deploy workflows fire when a pull request is MERGED into `main`, never on the pull
+  request itself.** `main` never receives direct pushes (§9), but a merge produces a `push`
+  event, so `on: push: branches: [main]` is the correct trigger. Never add a `pull_request`
+  trigger to a deploy workflow: it would deploy unmerged code.
+- **Authentication is OIDC — never a publish profile, a deployment token or a client secret.**
+  GitHub mints a short-lived token for each run; the federated credential on the Entra ID app
+  registration `gh-ci-gestfin-prod` exchanges it for an Azure token. **That identity has no
+  password at all.**
+- The federated credentials restrict _which_ runs may impersonate the identity: only
+  `repo:JorgeMallotti/gestionfinancieradocnet:ref:refs/heads/main` and
+  `repo:…:environment:production`. A PR from a fork cannot use it.
+- **Least privilege**: the CI identity holds exactly two resource-scoped roles —
+  `Website Contributor` on `app-gestfin-mallotti` and `Contributor` on `swa-gestfin-mallotti`.
+  **Never grant it a role on the resource group or the subscription.** No built-in role lists
+  `Microsoft.Web/staticSites/*`, so the SWA deploy needs `Contributor` scoped to that single
+  resource; narrowing it with a custom role is the documented hardening follow-up.
+- `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` live in GitHub **Variables**,
+  not Secrets: they are _identifiers_, useless without the federated trust. **No secret is stored
+  in GitHub at all.**
+- The `production` **GitHub Environment requires a manual approval**: a deployment does not start
+  until a reviewer approves it.
+- **The deploy workflows never apply migrations.** `deploy-backend.yml` generates the idempotent
+  SQL script (`dotnet ef migrations script --idempotent`) and uploads it as a build artifact
+  (`migrations-<sha>`); applying it remains an explicit review step (§7).
+- The runner is **Linux**, so the publish zip uses forward slashes and the
+  Windows/`Compress-Archive` Kudu trap cannot happen.
+- The smoke test must exercise the **data path** (`POST /api/auth/demo-login`), not only
+  `/health`: a 200 from `/health` proves the process started, not that the database nor the
+  signing key work (§13, lesson of 2026-09-15).
+
 ---
 
-## 15. Academic Explanation (Mandatory — Jorge Learns)
+## 15. Decision Records (Every Change Documents Its Rationale)
 
-**Every implementation the agent delivers MUST be accompanied by an academic explanation
-so Jorge learns the .NET/Angular stack while building the MVP — and can answer interview
-questions confidently.**
+**Every change ships with its rationale.** The code shows *what* was built; a decision
+record explains *why* it was built that way and what was rejected. An undocumented
+trade-off is a trade-off the next developer will undo by accident.
 
 ### Format of every response containing implementation
 
 After the code/task summary, include a section:
 
 ```
-## 📚 Aprende con esto (academic explanation)
+## 📋 Decision record
 
-**¿Qué hicimos?** — plain-language summary of the change (no jargon).
+**What changed** — plain-language summary of the change (no jargon).
 
-**¿Por qué así?** — the decision and the alternatives we rejected (and why).
+**Why this way** — the decision, plus the alternatives that were rejected and why.
 
-**Conceptos clave** — 2-5 concepts behind the implementation, each with:
-  - definition in simple words
-  - an analogy from daily life (e.g., JWT = a stamped ticket to a theme park)
+**Key concepts** — 2-5 concepts behind the implementation, each with:
+  - a definition in plain words
+  - an everyday analogy where it helps (e.g. JWT = a stamped ticket to a theme park)
 
-**Conexión con .NET / Angular** — how this maps to frameworks (DI, middleware,
+**How it maps to .NET / Angular** — how this maps to the frameworks (DI, middleware,
   EF Core pipeline, Signals, HttpClient interceptors...).
 
-**Posibles preguntas de entrevista** — 2-4 likely questions + how to answer
-  (answer skeleton, not a script to memorize).
+**Trade-offs and when this applies** — what the design costs, and the situations
+  where it is the right (or the wrong) choice.
 ```
 
 ### Rules
 
-- The explanation is **mandatory**, not optional — it is part of the deliverable.
-- Written in **Jorge's language (es/pt)**; technical terms stay in English
-  (e.g., "dependency injection" stays as-is) so he learns the vocabulary used in
-  job interviews.
-- Academic depth adapts to the topic: new concepts get the full treatment; small
-  refactors get a brief note referencing past lessons (do not repeat lessons).
-- When Jorge asks a question, answer it academically first, then connect it to the code.
-- The agent MUST NOT "just do" — every change is a teaching moment. If in doubt, explain.
-- Jorge's goal: after the MVP, he can explain the whole system end-to-end
-  (frontend → API → services → EF Core → SQL → Azure) in an interview.
+- The record is **part of the deliverable**, not a bonus.
+- Write the rationale in the repository owner's language (es/pt); technical terms
+  stay in English so the vocabulary matches the code.
+- Depth adapts to the change: a new concept gets the full treatment, a small
+  refactor gets a short note referencing the earlier record (do not repeat).
+- When the owner asks a question, answer it from first principles, then connect the
+  answer to the code.
+- Do not "just do" — a change without its rationale is an unfinished change.
+- Target: the whole system can be explained end to end (frontend → API → services →
+  EF Core → SQL → Azure) from these records alone.
 
 ---
 
@@ -839,9 +947,9 @@ Step 4 — Validate
 ├── Run lint & format checks
 └── Run build (dotnet build / ng build)
 
-Step 5 — Explain (MANDATORY — see §15)
-├── Academic explanation of the change
-└── Answer Jorge's questions
+Step 5 — Record (MANDATORY — see §15)
+├── Decision record for the change
+└── Answer the owner's questions
 
 Step 6 — Document
 ├── Update README if needed
@@ -888,8 +996,8 @@ Step 6 — Document
 
 ### General
 
-- All code, comments, commits, PRs, and docs in **English** (exceptions: §15 academic
-  explanations to Jorge in his language).
+- All code, comments, commits, PRs, and docs in **English** (exception: the §15
+  rationale sections, which may be written in the owner's language).
 - No commented-out code — delete it.
 - No `Console.WriteLine` — Serilog (backend) / `console.error` only for critical errors
   (frontend).
@@ -932,9 +1040,9 @@ Before finishing any task, the agent MUST verify:
 - [ ] **i18n**: All user-facing text via `@ngx-translate`? en/es/pt in sync?
 - [ ] **Optimistic Updates**: No unnecessary refetch after mutation? Backend returns full resources?
 - [ ] **Security**: FluentValidation + strict JSON? CORS explicit origins? Refresh cookie httpOnly/SameSite? Rate limiting? ProblemDetails without stack traces? No secrets committed?
-- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
+- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `gh auth token`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? Did anything sensitive leak into a commit message, a merge subject/body or a tracked file? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
 - [ ] **Audit**: Sensitive mutations write AuditLog?
 - [ ] **Tests**: Unit + integration tests for new code? Do they pass?
-- [ ] **Academic**: Did I include the "📚 Aprende con esto" section (§15)?
-- [ ] **Language**: Code/comments in English; explanation to Jorge in es/pt?
+- [ ] **Decision record**: Did I include the "📋 Decision record" section (§15)?
+- [ ] **Language**: Code/comments in English; rationale in the owner's language?
 - [ ] **Build**: `dotnet build` / `ng build` + `dotnet test` / `ng test` pass clean?

