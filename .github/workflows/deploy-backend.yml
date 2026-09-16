@@ -114,19 +114,38 @@ jobs:
       # A 200 on /health only proves the process started: it does not touch the
       # database nor sign a token. The demo login exercises the whole data path
       # (SQL Server auth + JWT signing key) end to end (AGENTS.md §13).
+      #
+      # Both calls are RETRIED, because the first requests after a deployment can
+      # fail while the app is still warming up -- a cold start, not a broken
+      # deployment (lesson of 2026-09-15, and it happened again on the first
+      # pipeline run on 2026-09-16: /health answered 200 while the data path
+      # returned 500, so a green health check does NOT mean the app is ready).
+      #
+      # Only 5xx and connection failures are retried. A 4xx is a real answer --
+      # bad credentials, a missing configuration -- and retrying it would just
+      # delay the failure.
       - name: Smoke test (health + data path)
         run: |
+          health=""
           for attempt in 1 2 3 4 5 6; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" https://api.mallottidigital.com/health)
-            echo "health attempt $attempt -> $code"
-            [ "$code" = "200" ] && break
+            health=$(curl -s -o /dev/null -w "%{http_code}" https://api.mallottidigital.com/health)
+            echo "health attempt $attempt -> $health"
+            [ "$health" = "200" ] && break
+            case "$health" in 4*) break ;; esac
             sleep 15
           done
 
-          login=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST https://api.mallottidigital.com/api/auth/demo-login \
-            -H "Content-Type: application/json" \
-            -d '{"account":"admin"}')
-          echo "demo-login -> $login"
+          login=""
+          for attempt in 1 2 3 4 5 6; do
+            login=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST https://api.mallottidigital.com/api/auth/demo-login \
+              -H "Content-Type: application/json" \
+              -d '{"account":"admin"}')
+            echo "demo-login attempt $attempt -> $login"
+            [ "$login" = "200" ] && break
+            case "$login" in 4*) break ;; esac
+            sleep 15
+          done
 
-          [ "$code" = "200" ] && [ "$login" = "200" ]
+          echo "final: health=$health demo-login=$login"
+          [ "$health" = "200" ] && [ "$login" = "200" ]
