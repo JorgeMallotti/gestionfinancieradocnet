@@ -788,9 +788,9 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
 Decided with Jorge on **2026-09-16**: the deployments stop being manual and stop depending on
 long-lived secrets.
 
-| Workflow              | Trigger                                                   | What it does                                                                        |
-| --------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `ci.yml`              | PR to `main`/`staging`, push to `staging`                 | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
+| Workflow              | Trigger                                                          | What it does                                                                        |
+| --------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `ci.yml`              | PR to `main`/`staging`, push to `staging`                        | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
 | `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
 | `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
 
