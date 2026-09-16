@@ -11,35 +11,35 @@ bank mediates.
 
 ## What it does
 
-| Area             | Capability                                                                                                                                            |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Accounts**     | Every client owns one account with a balance. **No account can go negative** — overdrafts are rejected in the service layer, not only in the UI.        |
-| **Transfers**    | Peer-to-peer payments between clients, or between a client and the bank.                                                                               |
-| **Ledger**       | Movements are **immutable and append-only**: there is no `PUT`/`DELETE` endpoint for one. Corrections are *stacked* as new movements, the way `git` never rewrites history. |
-| **Loans**        | A client requests an amount with a reason; the bank approves or rejects. On approval the treasury funds the client, who repays in full or in instalments. |
-| **Claims**       | A client disputes a movement; the bank proposes a corrective transfer; the parties consent and the correction is stacked on the ledger.                 |
-| **Categories**   | A bank-managed catalogue, visible to every client and optionally applied to a movement.                                                                 |
-| **Onboarding**   | Public signup creates a client account in `Pending` state until the bank approves it.                                                                   |
-| **Reporting**    | Any client can export their own movements as PDF or Excel.                                                                                              |
-| **Notifications**| In-app notifications for money received, loan decisions, claim updates and account changes.                                                             |
-| **Audit**        | Sensitive mutations write an append-only audit trail, readable by the bank only.                                                                        |
-| **i18n**         | Full interface in English, Spanish and Portuguese.                                                                                                      |
+| Area              | Capability                                                                                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Accounts**      | Every client owns one account with a balance. **No account can go negative** — overdrafts are rejected in the service layer, not only in the UI.                            |
+| **Transfers**     | Peer-to-peer payments between clients, or between a client and the bank.                                                                                                    |
+| **Ledger**        | Movements are **immutable and append-only**: there is no `PUT`/`DELETE` endpoint for one. Corrections are _stacked_ as new movements, the way `git` never rewrites history. |
+| **Loans**         | A client requests an amount with a reason; the bank approves or rejects. On approval the treasury funds the client, who repays in full or in instalments.                   |
+| **Claims**        | A client disputes a movement; the bank proposes a corrective transfer; the parties consent and the correction is stacked on the ledger.                                     |
+| **Categories**    | A bank-managed catalogue, visible to every client and optionally applied to a movement.                                                                                     |
+| **Onboarding**    | Public signup creates a client account in `Pending` state until the bank approves it.                                                                                       |
+| **Reporting**     | Any client can export their own movements as PDF or Excel.                                                                                                                  |
+| **Notifications** | In-app notifications for money received, loan decisions, claim updates and account changes.                                                                                 |
+| **Audit**         | Sensitive mutations write an append-only audit trail, readable by the bank only.                                                                                            |
+| **i18n**          | Full interface in English, Spanish and Portuguese.                                                                                                                          |
 
 ## Stack
 
-| Layer       | Technology                                                                                            |
-| ----------- | ----------------------------------------------------------------------------------------------------- |
-| Backend     | .NET 10 Web API — Clean Architecture (Domain / Application / Infrastructure / Api)                     |
-| Frontend    | Angular 21 — standalone components, Signals, Angular Material (M3), `@ngx-translate`                  |
-| Database    | SQL Server 2022 (Docker locally, Azure SQL in production) through EF Core 10                           |
-| Patterns    | Repository + FluentValidation + `Result<T>` — expected failures are values, never exceptions           |
-| Auth        | ASP.NET Core Identity; short-lived JWT access token + rotating refresh token in an httpOnly `SameSite=Strict` cookie |
-| Reports     | QuestPDF (PDF) + ClosedXML (Excel)                                                                     |
-| Logging     | Serilog (structured) + Application Insights in production                                              |
-| Security    | Strict JSON (unknown fields rejected), ProblemDetails (RFC 7807), rate limiting, CSP and security headers |
-| Testing     | xUnit + FluentAssertions; Vitest running the Angular specs in a real Chromium browser                   |
-| CI/CD       | GitHub Actions — passwordless OIDC deployments, no secret stored in the repository                      |
-| i18n        | en / es / pt, flat JSON bundles kept in sync                                                            |
+| Layer    | Technology                                                                                                           |
+| -------- | -------------------------------------------------------------------------------------------------------------------- |
+| Backend  | .NET 10 Web API — Clean Architecture (Domain / Application / Infrastructure / Api)                                   |
+| Frontend | Angular 21 — standalone components, Signals, Angular Material (M3), `@ngx-translate`                                 |
+| Database | SQL Server 2022 (Docker locally, Azure SQL in production) through EF Core 10                                         |
+| Patterns | Repository + FluentValidation + `Result<T>` — expected failures are values, never exceptions                         |
+| Auth     | ASP.NET Core Identity; short-lived JWT access token + rotating refresh token in an httpOnly `SameSite=Strict` cookie |
+| Reports  | QuestPDF (PDF) + ClosedXML (Excel)                                                                                   |
+| Logging  | Serilog (structured) + Application Insights in production                                                            |
+| Security | Strict JSON (unknown fields rejected), ProblemDetails (RFC 7807), rate limiting, CSP and security headers            |
+| Testing  | xUnit + FluentAssertions; Vitest running the Angular specs in a real Chromium browser                                |
+| CI/CD    | GitHub Actions — passwordless OIDC deployments, no secret stored in the repository                                   |
+| i18n     | en / es / pt, flat JSON bundles kept in sync                                                                         |
 
 ## Repository layout
 
@@ -103,8 +103,8 @@ company — so every flow can be explored from the login page with a single clic
 | Key     | Email                      | Role                                                            |
 | ------- | -------------------------- | --------------------------------------------------------------- |
 | `admin` | `demo.admin@gestfin.local` | Bank operator: approves clients, decides loans, mediates claims |
-| `ana`   | `demo.ana@gestfin.local`   | Client (person): transfers money and opens claims                |
-| `xyz`   | `demo.xyz@gestfin.local`   | Client (company): transfers money and opens claims               |
+| `ana`   | `demo.ana@gestfin.local`   | Client (person): transfers money and opens claims               |
+| `xyz`   | `demo.xyz@gestfin.local`   | Client (company): transfers money and opens claims              |
 
 The accounts already hold balances and ship with sample transfers, a loan and a claim,
 so the dashboard and the ledger have realistic data from the first load.
