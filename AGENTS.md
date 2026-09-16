@@ -788,10 +788,10 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
 Decided with Jorge on **2026-09-16**: the deployments stop being manual and stop depending on
 long-lived secrets.
 
-| Workflow              | Trigger                                                  | What it does                                                                        |
-| --------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `ci.yml`              | PR to `main`/`staging`, push to `staging`                | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
-| `deploy-backend.yml`  | push to `main` touching `backend/**`, or manual dispatch | build + test → publish → App Service → smoke test                                   |
+| Workflow              | Trigger                                                   | What it does                                                                        |
+| --------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `ci.yml`              | PR to `main`/`staging`, push to `staging`                 | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
+| `deploy-backend.yml`  | push to `main` touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
 | `deploy-frontend.yml` | push to `main` touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
 
 **Hard rules:**
@@ -800,7 +800,7 @@ long-lived secrets.
   GitHub mints a short-lived token for each run; the federated credential on the Entra ID app
   registration `gh-ci-gestfin-prod` exchanges it for an Azure token. **That identity has no
   password at all.**
-- The federated credentials restrict *which* runs may impersonate the identity: only
+- The federated credentials restrict _which_ runs may impersonate the identity: only
   `repo:JorgeMallotti/gestionfinancieradocnet:ref:refs/heads/main` and
   `repo:…:environment:production`. A PR from a fork cannot use it.
 - **Least privilege**: the CI identity holds exactly two resource-scoped roles —
@@ -809,7 +809,7 @@ long-lived secrets.
   `Microsoft.Web/staticSites/*`, so the SWA deploy needs `Contributor` scoped to that single
   resource; narrowing it with a custom role is the documented hardening follow-up.
 - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` live in GitHub **Variables**,
-  not Secrets: they are *identifiers*, useless without the federated trust. **No secret is stored
+  not Secrets: they are _identifiers_, useless without the federated trust. **No secret is stored
   in GitHub at all.**
 - The `production` **GitHub Environment requires a manual approval**: a deployment does not start
   until a reviewer approves it.
