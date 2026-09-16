@@ -1,5 +1,14 @@
 # Deploys the Angular app to Azure Static Web Apps.
 #
+# TRIGGER: a commit landing on `main`. This repository forbids direct pushes to
+# `main` (AGENTS.md §9) and only accepts merges from `staging` — but a merge IS a
+# `push` event, so this workflow runs right after the pull request is merged.
+# It does NOT run on the pull request itself; only `ci.yml` does.
+# `workflow_dispatch` covers deliberate re-deploys.
+#
+# This file lists ITSELF under `paths`, so editing the pipeline also triggers a
+# run — that is how the pipeline gets tested without touching product code.
+#
 # Authentication is PASSWORDLESS as well: the Static Web Apps CLI is given the
 # resource group and the app name and resolves the deployment token through ARM
 # using the OIDC login performed by `azure/login`. The long-lived deployment

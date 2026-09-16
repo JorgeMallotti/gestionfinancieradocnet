@@ -791,11 +791,15 @@ long-lived secrets.
 | Workflow              | Trigger                                                   | What it does                                                                        |
 | --------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `ci.yml`              | PR to `main`/`staging`, push to `staging`                 | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
-| `deploy-backend.yml`  | push to `main` touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
-| `deploy-frontend.yml` | push to `main` touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
+| `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
+| `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
 
 **Hard rules:**
 
+- **The deploy workflows fire when a pull request is MERGED into `main`, never on the pull
+  request itself.** `main` never receives direct pushes (§9), but a merge produces a `push`
+  event, so `on: push: branches: [main]` is the correct trigger. Never add a `pull_request`
+  trigger to a deploy workflow: it would deploy unmerged code.
 - **Authentication is OIDC — never a publish profile, a deployment token or a client secret.**
   GitHub mints a short-lived token for each run; the federated credential on the Entra ID app
   registration `gh-ci-gestfin-prod` exchanges it for an Azure token. **That identity has no
