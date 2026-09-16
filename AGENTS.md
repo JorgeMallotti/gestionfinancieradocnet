@@ -229,6 +229,20 @@ frontend/
     └── styles/                      # Material theme (light/dark), global SCSS
 ```
 
+### Repository root (`.github/`)
+
+```
+.github/
+└── workflows/
+    ├── ci.yml                     # PR + staging: build, tests, lint, format (no Azure access)
+    ├── deploy-backend.yml         # main: dotnet publish → App Service (OIDC + manual approval)
+    └── deploy-frontend.yml        # main: ng build → Static Web Apps (OIDC + manual approval)
+```
+
+`.github/workflows/` is the only path GitHub Actions reads (it is not configurable), so it is an
+explicit exception to the rule below. It holds **workflow YAML only** — never application code,
+scripts or secrets.
+
 **The agent MUST NOT create files outside this structure.**
 
 ---
@@ -768,6 +782,45 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
 - **Health checks**: `/health` endpoint wired to the App Service health check feature;
   `AZURE_APPINSIGHTS_KEY` optional; Serilog → Application Insights sink in prod.
 - Every deploy must be reproducible: same commit → same build (lock dependencies).
+
+### CI/CD — GitHub Actions (passwordless OIDC)
+
+Decided with Jorge on **2026-09-16**: the deployments stop being manual and stop depending on
+long-lived secrets.
+
+| Workflow              | Trigger                                                  | What it does                                                                        |
+| --------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `ci.yml`              | PR to `main`/`staging`, push to `staging`                | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
+| `deploy-backend.yml`  | push to `main` touching `backend/**`, or manual dispatch | build + test → publish → App Service → smoke test                                   |
+| `deploy-frontend.yml` | push to `main` touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
+
+**Hard rules:**
+
+- **Authentication is OIDC — never a publish profile, a deployment token or a client secret.**
+  GitHub mints a short-lived token for each run; the federated credential on the Entra ID app
+  registration `gh-ci-gestfin-prod` exchanges it for an Azure token. **That identity has no
+  password at all.**
+- The federated credentials restrict *which* runs may impersonate the identity: only
+  `repo:JorgeMallotti/gestionfinancieradocnet:ref:refs/heads/main` and
+  `repo:…:environment:production`. A PR from a fork cannot use it.
+- **Least privilege**: the CI identity holds exactly two resource-scoped roles —
+  `Website Contributor` on `app-gestfin-mallotti` and `Contributor` on `swa-gestfin-mallotti`.
+  **Never grant it a role on the resource group or the subscription.** No built-in role lists
+  `Microsoft.Web/staticSites/*`, so the SWA deploy needs `Contributor` scoped to that single
+  resource; narrowing it with a custom role is the documented hardening follow-up.
+- `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` live in GitHub **Variables**,
+  not Secrets: they are *identifiers*, useless without the federated trust. **No secret is stored
+  in GitHub at all.**
+- The `production` **GitHub Environment requires a manual approval**: a deployment does not start
+  until a reviewer approves it.
+- **The deploy workflows never apply migrations.** `deploy-backend.yml` generates the idempotent
+  SQL script (`dotnet ef migrations script --idempotent`) and uploads it as a build artifact
+  (`migrations-<sha>`); applying it remains an explicit review step (§7).
+- The runner is **Linux**, so the publish zip uses forward slashes and the
+  Windows/`Compress-Archive` Kudu trap cannot happen.
+- The smoke test must exercise the **data path** (`POST /api/auth/demo-login`), not only
+  `/health`: a 200 from `/health` proves the process started, not that the database nor the
+  signing key work (§13, lesson of 2026-09-15).
 
 ---
 
