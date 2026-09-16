@@ -662,6 +662,9 @@ exclusively with **references, names and metadata**.
 | `az webapp config connection-string list`                                                    | prints connection strings                                        |
 | `az webapp config container show`, `az containerapp ... show` (env vars)                     | prints environment variables                                     |
 | `dotnet user-secrets list`, `Get-ChildItem env:`, `printenv`, `set` (bare)                   | prints secret values                                             |
+| `gh auth token`                                                                              | prints the GitHub OAuth token in clear text                      |
+| `gh auth status --show-token`                                                                | same — and `--show-token` is the only reason to use that flag    |
+| reading the `gh` credential store (`hosts.yml`, the OS keyring entry)                        | secret material on disk                                          |
 | `docker inspect` on a container holding secrets, `docker compose config`                     | prints environment variables                                     |
 | reading `.env`, `appsettings.Production.json`, the user-secrets store, `.pfx`, `cookies.txt` | secret material on disk                                          |
 | any `--query` / `--output` expression whose **result** can contain a secret value            | `--query` does NOT sanitize output                               |
@@ -673,6 +676,9 @@ exclusively with **references, names and metadata**.
 - `az keyvault show` / `az keyvault list` (vault metadata: SKU, RBAC mode, firewall)
 - `az role assignment list --scope <vaultId> --assignee <objectId>` (permissions audit)
 - `az webapp identity show` / `az webapp identity assign` (managed identity)
+- `gh auth status` — account, active state and **scopes** only; the CLI masks the token itself
+  (`gho_****`). This is the way to verify that `gh` is usable without reading the credential.
+- `gh pr list`, `gh pr view`, `gh pr create`, `gh pr merge`, `gh run list`, `gh run watch`
 - writing **Key Vault references** — `@Microsoft.KeyVault(SecretUri=...)` contains no secret
 - the ARM endpoint `.../config/configreferences/appsettings` — reports only **whether** a
   reference resolved, never a value
@@ -695,6 +701,20 @@ rotate it, and (c) never repeat the pattern that caused it.
 whose answer travels through the model (`vscode_askQuestions` included) to collect secret
 values. If a secret must be stored, the agent instructs the user to type it **directly in
 the Azure portal or terminal**.
+
+**Delegated CLI access.** The agent normally authenticates nothing itself: the owner runs
+the login flow, and the credential stays in the tool's own store (`az` account cache, `gh`
+keyring). The agent then uses the CLI without ever reading the credential — which is why
+`gh auth status` (masked) is enough to verify it works, and why reading the token is never
+necessary. **Revoke when finished**, e.g. `gh auth logout --hostname github.com --user <user>`.
+
+**Nothing sensitive in anything git keeps.** Committed history is permanent, so secrets
+must never reach it through a side door: not in a commit message, not in a squash/merge
+subject or body, not in a file under version control. Similarly, `AGENTS.md` and the
+`README` are public-facing documents (§4): they may name resources, but never credentials.
+When merging with `gh`, pass an explicit `--subject`/`--body` instead of letting the CLI
+dump a long pull-request description into the squashed commit — a PR body that reads fine
+on the website becomes permanent text in the repository.
 
 ### Audit Trail
 
@@ -989,7 +1009,7 @@ Before finishing any task, the agent MUST verify:
 - [ ] **i18n**: All user-facing text via `@ngx-translate`? en/es/pt in sync?
 - [ ] **Optimistic Updates**: No unnecessary refetch after mutation? Backend returns full resources?
 - [ ] **Security**: FluentValidation + strict JSON? CORS explicit origins? Refresh cookie httpOnly/SameSite? Rate limiting? ProblemDetails without stack traces? No secrets committed?
-- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
+- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `gh auth token`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? Did anything sensitive leak into a commit message, a merge subject/body or a tracked file? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
 - [ ] **Audit**: Sensitive mutations write AuditLog?
 - [ ] **Tests**: Unit + integration tests for new code? Do they pass?
 - [ ] **Academic**: Did I include the "📚 Aprende con esto" section (§15)?
