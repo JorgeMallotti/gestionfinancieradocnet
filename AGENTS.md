@@ -713,7 +713,7 @@ must never reach it through a side door: not in a commit message, not in a squas
 subject or body, not in a file under version control. Similarly, `AGENTS.md` and the
 `README` are public-facing documents (§4): they may name resources, but never credentials.
 When merging with `gh`, pass an explicit `--subject`/`--body` instead of letting the CLI
-dump a long pull-request description into the squashed commit — a PR body that reads fine
+dump a long pull-request description into the permanent commit — a PR body that reads fine
 on the website becomes permanent text in the repository.
 
 ### Audit Trail
