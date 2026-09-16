@@ -229,6 +229,20 @@ frontend/
     └── styles/                      # Material theme (light/dark), global SCSS
 ```
 
+### Repository root (`.github/`)
+
+```
+.github/
+└── workflows/
+    ├── ci.yml                     # PR + staging: build, tests, lint, format (no Azure access)
+    ├── deploy-backend.yml         # main: dotnet publish → App Service (OIDC + manual approval)
+    └── deploy-frontend.yml        # main: ng build → Static Web Apps (OIDC + manual approval)
+```
+
+`.github/workflows/` is the only path GitHub Actions reads (it is not configurable), so it is an
+explicit exception to the rule below. It holds **workflow YAML only** — never application code,
+scripts or secrets.
+
 **The agent MUST NOT create files outside this structure.**
 
 ---
@@ -648,6 +662,9 @@ exclusively with **references, names and metadata**.
 | `az webapp config connection-string list`                                                    | prints connection strings                                        |
 | `az webapp config container show`, `az containerapp ... show` (env vars)                     | prints environment variables                                     |
 | `dotnet user-secrets list`, `Get-ChildItem env:`, `printenv`, `set` (bare)                   | prints secret values                                             |
+| `gh auth token`                                                                              | prints the GitHub OAuth token in clear text                      |
+| `gh auth status --show-token`                                                                | same — and `--show-token` is the only reason to use that flag    |
+| reading the `gh` credential store (`hosts.yml`, the OS keyring entry)                        | secret material on disk                                          |
 | `docker inspect` on a container holding secrets, `docker compose config`                     | prints environment variables                                     |
 | reading `.env`, `appsettings.Production.json`, the user-secrets store, `.pfx`, `cookies.txt` | secret material on disk                                          |
 | any `--query` / `--output` expression whose **result** can contain a secret value            | `--query` does NOT sanitize output                               |
@@ -659,6 +676,9 @@ exclusively with **references, names and metadata**.
 - `az keyvault show` / `az keyvault list` (vault metadata: SKU, RBAC mode, firewall)
 - `az role assignment list --scope <vaultId> --assignee <objectId>` (permissions audit)
 - `az webapp identity show` / `az webapp identity assign` (managed identity)
+- `gh auth status` — account, active state and **scopes** only; the CLI masks the token itself
+  (`gho_****`). This is the way to verify that `gh` is usable without reading the credential.
+- `gh pr list`, `gh pr view`, `gh pr create`, `gh pr merge`, `gh run list`, `gh run watch`
 - writing **Key Vault references** — `@Microsoft.KeyVault(SecretUri=...)` contains no secret
 - the ARM endpoint `.../config/configreferences/appsettings` — reports only **whether** a
   reference resolved, never a value
@@ -681,6 +701,20 @@ rotate it, and (c) never repeat the pattern that caused it.
 whose answer travels through the model (`vscode_askQuestions` included) to collect secret
 values. If a secret must be stored, the agent instructs the user to type it **directly in
 the Azure portal or terminal**.
+
+**Delegated CLI access.** The agent normally authenticates nothing itself: the owner runs
+the login flow, and the credential stays in the tool's own store (`az` account cache, `gh`
+keyring). The agent then uses the CLI without ever reading the credential — which is why
+`gh auth status` (masked) is enough to verify it works, and why reading the token is never
+necessary. **Revoke when finished**, e.g. `gh auth logout --hostname github.com --user <user>`.
+
+**Nothing sensitive in anything git keeps.** Committed history is permanent, so secrets
+must never reach it through a side door: not in a commit message, not in a squash/merge
+subject or body, not in a file under version control. Similarly, `AGENTS.md` and the
+`README` are public-facing documents (§4): they may name resources, but never credentials.
+When merging with `gh`, pass an explicit `--subject`/`--body` instead of letting the CLI
+dump a long pull-request description into the permanent commit — a PR body that reads fine
+on the website becomes permanent text in the repository.
 
 ### Audit Trail
 
@@ -768,6 +802,49 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
 - **Health checks**: `/health` endpoint wired to the App Service health check feature;
   `AZURE_APPINSIGHTS_KEY` optional; Serilog → Application Insights sink in prod.
 - Every deploy must be reproducible: same commit → same build (lock dependencies).
+
+### CI/CD — GitHub Actions (passwordless OIDC)
+
+Decided with Jorge on **2026-09-16**: the deployments stop being manual and stop depending on
+long-lived secrets.
+
+| Workflow              | Trigger                                                          | What it does                                                                        |
+| --------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `ci.yml`              | PR to `main`/`staging`, push to `staging`                        | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
+| `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
+| `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
+
+**Hard rules:**
+
+- **The deploy workflows fire when a pull request is MERGED into `main`, never on the pull
+  request itself.** `main` never receives direct pushes (§9), but a merge produces a `push`
+  event, so `on: push: branches: [main]` is the correct trigger. Never add a `pull_request`
+  trigger to a deploy workflow: it would deploy unmerged code.
+- **Authentication is OIDC — never a publish profile, a deployment token or a client secret.**
+  GitHub mints a short-lived token for each run; the federated credential on the Entra ID app
+  registration `gh-ci-gestfin-prod` exchanges it for an Azure token. **That identity has no
+  password at all.**
+- The federated credentials restrict _which_ runs may impersonate the identity: only
+  `repo:JorgeMallotti/gestionfinancieradocnet:ref:refs/heads/main` and
+  `repo:…:environment:production`. A PR from a fork cannot use it.
+- **Least privilege**: the CI identity holds exactly two resource-scoped roles —
+  `Website Contributor` on `app-gestfin-mallotti` and `Contributor` on `swa-gestfin-mallotti`.
+  **Never grant it a role on the resource group or the subscription.** No built-in role lists
+  `Microsoft.Web/staticSites/*`, so the SWA deploy needs `Contributor` scoped to that single
+  resource; narrowing it with a custom role is the documented hardening follow-up.
+- `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` live in GitHub **Variables**,
+  not Secrets: they are _identifiers_, useless without the federated trust. **No secret is stored
+  in GitHub at all.**
+- The `production` **GitHub Environment requires a manual approval**: a deployment does not start
+  until a reviewer approves it.
+- **The deploy workflows never apply migrations.** `deploy-backend.yml` generates the idempotent
+  SQL script (`dotnet ef migrations script --idempotent`) and uploads it as a build artifact
+  (`migrations-<sha>`); applying it remains an explicit review step (§7).
+- The runner is **Linux**, so the publish zip uses forward slashes and the
+  Windows/`Compress-Archive` Kudu trap cannot happen.
+- The smoke test must exercise the **data path** (`POST /api/auth/demo-login`), not only
+  `/health`: a 200 from `/health` proves the process started, not that the database nor the
+  signing key work (§13, lesson of 2026-09-15).
 
 ---
 
@@ -932,7 +1009,7 @@ Before finishing any task, the agent MUST verify:
 - [ ] **i18n**: All user-facing text via `@ngx-translate`? en/es/pt in sync?
 - [ ] **Optimistic Updates**: No unnecessary refetch after mutation? Backend returns full resources?
 - [ ] **Security**: FluentValidation + strict JSON? CORS explicit origins? Refresh cookie httpOnly/SameSite? Rate limiting? ProblemDetails without stack traces? No secrets committed?
-- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
+- [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `gh auth token`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? Did anything sensitive leak into a commit message, a merge subject/body or a tracked file? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
 - [ ] **Audit**: Sensitive mutations write AuditLog?
 - [ ] **Tests**: Unit + integration tests for new code? Do they pass?
 - [ ] **Academic**: Did I include the "📚 Aprende con esto" section (§15)?
