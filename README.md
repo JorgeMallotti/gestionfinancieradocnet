@@ -2,6 +2,8 @@
 
 Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 
+**🔗 Live demo: <https://finanzas.mallottidigital.com>** — one-click demo accounts, no signup needed.
+
 An internal financial management MVP: transactions, categories, dashboard, PDF/Excel
 reports, audit log, email notifications, and multi-company support. Built to maximize
 employability in the .NET job market — Clean Architecture, corporate-grade patterns.
