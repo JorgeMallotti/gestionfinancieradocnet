@@ -88,16 +88,31 @@ jobs:
 
       # The build ships `staticwebapp.config.json`, so the deep links and the
       # security headers are part of the deployment.
+      #
+      # Both URLs are retried: a Static Web App deployment propagates
+      # asynchronously, so a request can be served by the previous revision for a
+      # moment after the CLI reports success. Only 5xx and connection failures are
+      # retried; a 4xx is a real answer and retrying it would just delay the
+      # failure.
       - name: Smoke test
         run: |
-          for attempt in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" https://finanzas.mallottidigital.com/)
-            echo "frontend attempt $attempt -> $code"
-            [ "$code" = "200" ] && break
+          root=""
+          for attempt in 1 2 3 4 5 6; do
+            root=$(curl -s -o /dev/null -w "%{http_code}" https://finanzas.mallottidigital.com/)
+            echo "root attempt $attempt -> $root"
+            [ "$root" = "200" ] && break
+            case "$root" in 4*) break ;; esac
             sleep 10
           done
 
-          deep=$(curl -s -o /dev/null -w "%{http_code}" https://finanzas.mallottidigital.com/movements)
-          echo "deep link /movements -> $deep"
+          deep=""
+          for attempt in 1 2 3 4 5 6; do
+            deep=$(curl -s -o /dev/null -w "%{http_code}" https://finanzas.mallottidigital.com/movements)
+            echo "deep link /movements attempt $attempt -> $deep"
+            [ "$deep" = "200" ] && break
+            case "$deep" in 4*) break ;; esac
+            sleep 10
+          done
 
-          [ "$code" = "200" ] && [ "$deep" = "200" ]
+          echo "final: root=$root deep=/movements:$deep"
+          [ "$root" = "200" ] && [ "$deep" = "200" ]
