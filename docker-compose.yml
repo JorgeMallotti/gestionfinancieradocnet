@@ -3,6 +3,13 @@
 # Stop:    docker compose down
 # Wipe:    docker compose down -v   (removes data volume too)
 #
+# The `sa` password is read from MSSQL_SA_PASSWORD and there is DELIBERATELY no
+# fallback value: a committed default would be a credential living inside the
+# repository (and would be flagged by GitHub secret scanning).
+#   1. cp .env.example .env      (`.env` is git-ignored)
+#   2. set a password of your own — SQL Server requires 8+ characters using
+#      three of: uppercase, lowercase, digits, symbols
+#
 # Connection string for the backend (user-secrets, never committed):
 #   Server=localhost,1433;Database=GestionFinanciera;User Id=sa;Password=<MSSQL_SA_PASSWORD>;TrustServerCertificate=True
 
@@ -12,7 +19,7 @@ services:
     container_name: gestionfinanciera-sqlserver
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-GestionFinanciera!2026}"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?MSSQL_SA_PASSWORD is not set - copy .env.example to .env and set a password (see README)}"
       MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
