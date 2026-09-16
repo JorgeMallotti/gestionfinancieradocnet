@@ -13,27 +13,27 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 
 ## Table of Contents
 
-| Sec | Title                                                                                               |
-| --- | --------------------------------------------------------------------------------------------------- |
-| 1   | [Mandatory Reads Before Any Change](#1-mandatory-reads-before-any-change)                           |
-| 2   | [Stack & Key Decisions (LOCKED)](#2-stack--key-decisions-locked)                                    |
-| 3   | [Architecture Rules (Clean Architecture)](#3-architecture-rules-clean-architecture)                 |
-| 4   | [Project Structure (Strictly Enforced)](#4-project-structure-strictly-enforced)                     |
-| 5   | [Module Convention (.NET Backend)](#5-module-convention-net-backend)                                |
-| 6   | [Module Convention (Angular Frontend)](#6-module-convention-angular-frontend)                       |
-| 7   | [Database Migration Rules (EF Core — Strict)](#7-database-migration-rules-ef-core--strict)          |
-| 8   | [Tenancy Rules (Single Bank — Multitenant-Ready)](#8-tenancy-rules-single-bank--multitenant-ready)  |
-| 9   | [Git Workflow: feat/\* → staging → main](#9-git-workflow-feat--staging--main)                       |
-| 10  | [Styling — Angular Material (Exclusive)](#10-styling--angular-material-exclusive)                   |
-| 11  | [Internationalization (i18n) — @ngx-translate](#11-internationalization-i18n--ngx-translate)        |
-| 12  | [State Management & Optimistic Updates](#12-state-management--optimistic-updates)                   |
-| 13  | [Security Constraints (Hard Rules)](#13-security-constraints-hard-rules)                            |
-| 14  | [Deployment Rules (Azure)](#14-deployment-rules-azure)                                              |
+| Sec | Title                                                                                                                |
+| --- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Mandatory Reads Before Any Change](#1-mandatory-reads-before-any-change)                                            |
+| 2   | [Stack & Key Decisions (LOCKED)](#2-stack--key-decisions-locked)                                                     |
+| 3   | [Architecture Rules (Clean Architecture)](#3-architecture-rules-clean-architecture)                                  |
+| 4   | [Project Structure (Strictly Enforced)](#4-project-structure-strictly-enforced)                                      |
+| 5   | [Module Convention (.NET Backend)](#5-module-convention-net-backend)                                                 |
+| 6   | [Module Convention (Angular Frontend)](#6-module-convention-angular-frontend)                                        |
+| 7   | [Database Migration Rules (EF Core — Strict)](#7-database-migration-rules-ef-core--strict)                           |
+| 8   | [Tenancy Rules (Single Bank — Multitenant-Ready)](#8-tenancy-rules-single-bank--multitenant-ready)                   |
+| 9   | [Git Workflow: feat/\* → staging → main](#9-git-workflow-feat--staging--main)                                        |
+| 10  | [Styling — Angular Material (Exclusive)](#10-styling--angular-material-exclusive)                                    |
+| 11  | [Internationalization (i18n) — @ngx-translate](#11-internationalization-i18n--ngx-translate)                         |
+| 12  | [State Management & Optimistic Updates](#12-state-management--optimistic-updates)                                    |
+| 13  | [Security Constraints (Hard Rules)](#13-security-constraints-hard-rules)                                             |
+| 14  | [Deployment Rules (Azure)](#14-deployment-rules-azure)                                                               |
 | 15  | [Decision Records (Every Change Documents Its Rationale)](#15-decision-records-every-change-documents-its-rationale) |
-| 16  | [Agent Change Protocol](#16-agent-change-protocol)                                                  |
-| 17  | [Coding Standards](#17-coding-standards)                                                            |
-| 18  | [Protected Files (Agent MUST NOT Modify)](#18-protected-files-agent-must-not-modify)                |
-| 19  | [Verification Checklist (Agent Self-Check)](#19-verification-checklist-agent-self-check)            |
+| 16  | [Agent Change Protocol](#16-agent-change-protocol)                                                                   |
+| 17  | [Coding Standards](#17-coding-standards)                                                                             |
+| 18  | [Protected Files (Agent MUST NOT Modify)](#18-protected-files-agent-must-not-modify)                                 |
+| 19  | [Verification Checklist (Agent Self-Check)](#19-verification-checklist-agent-self-check)                             |
 
 ---
 
@@ -53,29 +53,29 @@ Before writing a single line of code, read:
 
 Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit approval.**
 
-| Decision          | Choice                                                                                                 | Why                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Modern LTS: a supported, long-term-service release and the current corporate standard |
-| Frontend          | **Angular 21** (standalone components) + **Angular Material**                                          | Corporate standard for .NET shops; ready components              |
-| Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod                | Same engine dev/prod (no drift)                                  |
-| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Keeps the domain free of framework dependencies; the standard for non-trivial .NET systems                    |
-| Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                           | "Corporate level" — what real companies ask for                  |
-| Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                            | Secure; fixes the localStorage token debt of the old project     |
-| Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**         | Bank demo model (Jorge, 2026-09-02)                              |
-| Multi-tenancy     | **Single bank in the MVP** — `CompanyId` kept on all tables + global query filters (multitenant-ready) | Company = the bank; avoids painful migrations later              |
-| PDF               | **QuestPDF**                                                                                           | Free for this use case, de-facto standard in .NET                |
-| Excel export      | **ClosedXML**                                                                                          | Free (MIT), standard                                             |
-| Email             | **MailKit** (SMTP) or SendGrid SDK                                                                     | MailKit is the modern standard (SmtpClient is legacy)            |
-| Validation        | **FluentValidation**                                                                                   | Seen in almost every .NET job offer                              |
-| Logging           | **Serilog** + Application Insights (Azure)                                                             | Structured logging, corporate standard                           |
-| API docs          | **Swagger / OpenAPI**                                                                                  | Free documentation, testable endpoints                           |
-| Error contract    | **ProblemDetails** (RFC 7807)                                                                          | Standard ASP.NET Core format                                     |
-| Tests             | **xUnit + FluentAssertions** (unit), **WebApplicationFactory** (integration)                           | Corporate standard                                               |
-| CI/CD             | **GitHub Actions** (backend → App Service, frontend → Static Web Apps)                                 | Free, standard                                                   |
-| Frontend state    | **Angular Signals + inject-based services**                                                            | Modern Angular idiom (stable since 17, mature in 21)             |
-| i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                            | Community standard, same pattern as old project                  |
-| Language of code  | English everywhere (code, comments, commits, docs)                                                     | Global standard                                                  |
-| Conversation lang | Rationale sections in the owner's language (es/pt); technical terms kept in English           | §15                                                              |
+| Decision          | Choice                                                                                                 | Why                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Modern LTS: a supported, long-term-service release and the current corporate standard      |
+| Frontend          | **Angular 21** (standalone components) + **Angular Material**                                          | Corporate standard for .NET shops; ready components                                        |
+| Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod                | Same engine dev/prod (no drift)                                                            |
+| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Keeps the domain free of framework dependencies; the standard for non-trivial .NET systems |
+| Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                           | "Corporate level" — what real companies ask for                                            |
+| Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                            | Secure; fixes the localStorage token debt of the old project                               |
+| Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**         | Bank demo model (Jorge, 2026-09-02)                                                        |
+| Multi-tenancy     | **Single bank in the MVP** — `CompanyId` kept on all tables + global query filters (multitenant-ready) | Company = the bank; avoids painful migrations later                                        |
+| PDF               | **QuestPDF**                                                                                           | Free for this use case, de-facto standard in .NET                                          |
+| Excel export      | **ClosedXML**                                                                                          | Free (MIT), standard                                                                       |
+| Email             | **MailKit** (SMTP) or SendGrid SDK                                                                     | MailKit is the modern standard (SmtpClient is legacy)                                      |
+| Validation        | **FluentValidation**                                                                                   | Seen in almost every .NET job offer                                                        |
+| Logging           | **Serilog** + Application Insights (Azure)                                                             | Structured logging, corporate standard                                                     |
+| API docs          | **Swagger / OpenAPI**                                                                                  | Free documentation, testable endpoints                                                     |
+| Error contract    | **ProblemDetails** (RFC 7807)                                                                          | Standard ASP.NET Core format                                                               |
+| Tests             | **xUnit + FluentAssertions** (unit), **WebApplicationFactory** (integration)                           | Corporate standard                                                                         |
+| CI/CD             | **GitHub Actions** (backend → App Service, frontend → Static Web Apps)                                 | Free, standard                                                                             |
+| Frontend state    | **Angular Signals + inject-based services**                                                            | Modern Angular idiom (stable since 17, mature in 21)                                       |
+| i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                            | Community standard, same pattern as old project                                            |
+| Language of code  | English everywhere (code, comments, commits, docs)                                                     | Global standard                                                                            |
+| Conversation lang | Rationale sections in the owner's language (es/pt); technical terms kept in English                    | §15                                                                                        |
 
 ### 2.1 Product Model — Bank Demo (LOCKED 2026-09-02)
 
@@ -233,6 +233,7 @@ frontend/
 
 ```
 .github/
+├── dependabot.yml                 # Weekly updates, all targeting staging (§9)
 └── workflows/
     ├── ci.yml                     # PR + staging: build, tests, lint, format (no Azure access)
     ├── branch-policy.yml          # PR to main: must come from staging (§9)
@@ -472,24 +473,42 @@ block merge commits and force squash or rebase.
 
 Required status checks: the two `ci.yml` jobs plus `PR must come from staging`.
 
+**Do NOT add the "Restrict updates" rule.** It does block direct pushes, but it
+also refuses _every_ update of the ref — **including the merge GitHub performs**.
+With an empty bypass list, which is what we want so the rules apply to the owner
+too, the release pull request becomes permanently `BLOCKED` while every check is
+green. Measured on 2026-09-16 by removing it and watching `mergeStateStatus` go
+from `BLOCKED` to `CLEAN` and back.
+
+**"Require a pull request before merging" already blocks direct pushes on its
+own** — a real push is refused with _"Changes must be made through a pull
+request"_ — so `update` adds nothing here. If it is ever genuinely needed (say, to
+stop a bot writing to `main`), it must be added **with** `bypass_mode:
+"pull_request"` so the merge stays possible.
+
+⚠️ `git push --dry-run` does **not** evaluate server-side rules: it simulates the
+push locally and succeeds even while a rule would reject it. To test a ruleset,
+push for real to a throwaway branch (and delete the ruleset **before** the branch,
+since an active ruleset also blocks deleting it).
+
 ### Solo maintainer: why there is no required approval
 
-GitHub blocks self-approval (*"Pull request authors cannot approve their own pull
-requests"*) and repository owners can merge without an approval. With a single
+GitHub blocks self-approval (_"Pull request authors cannot approve their own pull
+requests"_) and repository owners can merge without an approval. With a single
 maintainer, a required approval is therefore either a deadlock or a formality —
 it can never be a review by someone else. The controls that **do** work alone are:
 
-| Control                          | Enforced by                                            |
-| -------------------------------- | ------------------------------------------------------ |
-| No direct pushes to `main`       | Require a pull request before merging                  |
-| No broken code reaches `main`    | Required status checks (114 tests, lint, prod build)   |
-| `main` only arrives from `staging` | The `branch-policy.yml` check                        |
-| No history rewriting             | Block force pushes                                     |
-| No accidental branch deletion    | Restrict deletions                                     |
-| A deliberate human pause         | The `production` environment, which **does** allow the maintainer to approve their own deployment |
+| Control                            | Enforced by                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| No direct pushes to `main`         | Require a pull request before merging                                                             |
+| No broken code reaches `main`      | Required status checks (114 tests, lint, prod build)                                              |
+| `main` only arrives from `staging` | The `branch-policy.yml` check                                                                     |
+| No history rewriting               | Block force pushes                                                                                |
+| No accidental branch deletion      | Restrict deletions                                                                                |
+| A deliberate human pause           | The `production` environment, which **does** allow the maintainer to approve their own deployment |
 
 **When a second maintainer joins:** add `Required approvals: 1`, enable
-*Dismiss stale approvals*, and stop merging your own pull requests.
+_Dismiss stale approvals_, and stop merging your own pull requests.
 
 ---
 
@@ -881,8 +900,8 @@ long-lived secrets.
 
 ## 15. Decision Records (Every Change Documents Its Rationale)
 
-**Every change ships with its rationale.** The code shows *what* was built; a decision
-record explains *why* it was built that way and what was rejected. An undocumented
+**Every change ships with its rationale.** The code shows _what_ was built; a decision
+record explains _why_ it was built that way and what was rejected. An undocumented
 trade-off is a trade-off the next developer will undo by accident.
 
 ### Format of every response containing implementation
