@@ -9,7 +9,7 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 > This file adapts the security best practices from the previous project's AGENTS.md
 > (NestJS/Next.js) to the new stack. Nothing from the old security rules was dropped —
 > each rule was rewritten for .NET/Angular. New sections: Tenancy, Azure Deployment,
-> and Academic Explanation (Jorge learns while building).
+> and Decision Records (the rationale behind each change).
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 | 12  | [State Management & Optimistic Updates](#12-state-management--optimistic-updates)                   |
 | 13  | [Security Constraints (Hard Rules)](#13-security-constraints-hard-rules)                            |
 | 14  | [Deployment Rules (Azure)](#14-deployment-rules-azure)                                              |
-| 15  | [Academic Explanation (Mandatory — Jorge Learns)](#15-academic-explanation-mandatory--jorge-learns) |
+| 15  | [Decision Records (Every Change Documents Its Rationale)](#15-decision-records-every-change-documents-its-rationale) |
 | 16  | [Agent Change Protocol](#16-agent-change-protocol)                                                  |
 | 17  | [Coding Standards](#17-coding-standards)                                                            |
 | 18  | [Protected Files (Agent MUST NOT Modify)](#18-protected-files-agent-must-not-modify)                |
@@ -45,7 +45,7 @@ Before writing a single line of code, read:
 - If touching the database: the EF Core `DbContext` and the `Migrations/` folder
 - If creating frontend components: existing patterns in `frontend/src/app/`
 - If modifying an existing backend feature: the full feature folder
-- This file again, especially §15 (Academic Explanation) — every change is also a lesson
+- This file again, especially §15 (Decision Records) — every change leaves a rationale behind
 
 ---
 
@@ -55,10 +55,10 @@ Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit appr
 
 | Decision          | Choice                                                                                                 | Why                                                              |
 | ----------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Employability in Portugal; modern, supported, corporate standard |
+| Backend           | **.NET 10 Web API** (modern LTS)                                                                       | Modern LTS: a supported, long-term-service release and the current corporate standard |
 | Frontend          | **Angular 21** (standalone components) + **Angular Material**                                          | Corporate standard for .NET shops; ready components              |
 | Database          | **SQL Server** — Docker `mcr.microsoft.com/mssql/server` locally, **Azure SQL** in prod                | Same engine dev/prod (no drift)                                  |
-| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Most requested pattern in .NET job interviews                    |
+| Architecture      | **Clean Architecture** (Domain / Application / Infrastructure / Api)                                   | Keeps the domain free of framework dependencies; the standard for non-trivial .NET systems                    |
 | Backend patterns  | **Repositories + FluentValidation + Result pattern** (+ AutoMapper optional)                           | "Corporate level" — what real companies ask for                  |
 | Auth              | **ASP.NET Core Identity + JWT (access) + refresh token in httpOnly cookie**                            | Secure; fixes the localStorage token debt of the old project     |
 | Roles             | `Admin` (bank operator & mediator) + `User` (client: person or company). **`Finance` removed**         | Bank demo model (Jorge, 2026-09-02)                              |
@@ -75,7 +75,7 @@ Decisions agreed with Jorge on 2026-08-23. **Do not change without explicit appr
 | Frontend state    | **Angular Signals + inject-based services**                                                            | Modern Angular idiom (stable since 17, mature in 21)             |
 | i18n              | **@ngx-translate**, files `en.json` / `es.json` / `pt.json`                                            | Community standard, same pattern as old project                  |
 | Language of code  | English everywhere (code, comments, commits, docs)                                                     | Global standard                                                  |
-| Conversation lang | Academic explanations to Jorge in **his language (es/pt)** — technical terms kept in English           | §15                                                              |
+| Conversation lang | Rationale sections in the owner's language (es/pt); technical terms kept in English           | §15                                                              |
 
 ### 2.1 Product Model — Bank Demo (LOCKED 2026-09-02)
 
@@ -705,8 +705,7 @@ the Azure portal or terminal**.
 
 ## 14. Deployment Rules (Azure)
 
-Target architecture (Jorge deploys; the agent guides and prepares everything). The
-concrete, deployed values for the demo are:
+Target architecture. The concrete, deployed values for the demo are:
 
 ```
 Landing (www.mallottidigital.com) ──iframe (same-site)──┐
@@ -771,46 +770,46 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
 
 ---
 
-## 15. Academic Explanation (Mandatory — Jorge Learns)
+## 15. Decision Records (Every Change Documents Its Rationale)
 
-**Every implementation the agent delivers MUST be accompanied by an academic explanation
-so Jorge learns the .NET/Angular stack while building the MVP — and can answer interview
-questions confidently.**
+**Every change ships with its rationale.** The code shows *what* was built; a decision
+record explains *why* it was built that way and what was rejected. An undocumented
+trade-off is a trade-off the next developer will undo by accident.
 
 ### Format of every response containing implementation
 
 After the code/task summary, include a section:
 
 ```
-## 📚 Aprende con esto (academic explanation)
+## 📋 Decision record
 
-**¿Qué hicimos?** — plain-language summary of the change (no jargon).
+**What changed** — plain-language summary of the change (no jargon).
 
-**¿Por qué así?** — the decision and the alternatives we rejected (and why).
+**Why this way** — the decision, plus the alternatives that were rejected and why.
 
-**Conceptos clave** — 2-5 concepts behind the implementation, each with:
-  - definition in simple words
-  - an analogy from daily life (e.g., JWT = a stamped ticket to a theme park)
+**Key concepts** — 2-5 concepts behind the implementation, each with:
+  - a definition in plain words
+  - an everyday analogy where it helps (e.g. JWT = a stamped ticket to a theme park)
 
-**Conexión con .NET / Angular** — how this maps to frameworks (DI, middleware,
+**How it maps to .NET / Angular** — how this maps to the frameworks (DI, middleware,
   EF Core pipeline, Signals, HttpClient interceptors...).
 
-**Posibles preguntas de entrevista** — 2-4 likely questions + how to answer
-  (answer skeleton, not a script to memorize).
+**Trade-offs and when this applies** — what the design costs, and the situations
+  where it is the right (or the wrong) choice.
 ```
 
 ### Rules
 
-- The explanation is **mandatory**, not optional — it is part of the deliverable.
-- Written in **Jorge's language (es/pt)**; technical terms stay in English
-  (e.g., "dependency injection" stays as-is) so he learns the vocabulary used in
-  job interviews.
-- Academic depth adapts to the topic: new concepts get the full treatment; small
-  refactors get a brief note referencing past lessons (do not repeat lessons).
-- When Jorge asks a question, answer it academically first, then connect it to the code.
-- The agent MUST NOT "just do" — every change is a teaching moment. If in doubt, explain.
-- Jorge's goal: after the MVP, he can explain the whole system end-to-end
-  (frontend → API → services → EF Core → SQL → Azure) in an interview.
+- The record is **part of the deliverable**, not a bonus.
+- Write the rationale in the repository owner's language (es/pt); technical terms
+  stay in English so the vocabulary matches the code.
+- Depth adapts to the change: a new concept gets the full treatment, a small
+  refactor gets a short note referencing the earlier record (do not repeat).
+- When the owner asks a question, answer it from first principles, then connect the
+  answer to the code.
+- Do not "just do" — a change without its rationale is an unfinished change.
+- Target: the whole system can be explained end to end (frontend → API → services →
+  EF Core → SQL → Azure) from these records alone.
 
 ---
 
@@ -839,9 +838,9 @@ Step 4 — Validate
 ├── Run lint & format checks
 └── Run build (dotnet build / ng build)
 
-Step 5 — Explain (MANDATORY — see §15)
-├── Academic explanation of the change
-└── Answer Jorge's questions
+Step 5 — Record (MANDATORY — see §15)
+├── Decision record for the change
+└── Answer the owner's questions
 
 Step 6 — Document
 ├── Update README if needed
@@ -888,8 +887,8 @@ Step 6 — Document
 
 ### General
 
-- All code, comments, commits, PRs, and docs in **English** (exceptions: §15 academic
-  explanations to Jorge in his language).
+- All code, comments, commits, PRs, and docs in **English** (exception: the §15
+  rationale sections, which may be written in the owner's language).
 - No commented-out code — delete it.
 - No `Console.WriteLine` — Serilog (backend) / `console.error` only for critical errors
   (frontend).
@@ -935,6 +934,6 @@ Before finishing any task, the agent MUST verify:
 - [ ] **No secret exposure**: did I run any command that could print a secret value (`az keyvault secret show`, `appsettings list` without `--query "[].name"`, `user-secrets list`, env dumps)? Did I ask the user to paste a secret in the chat? If any secret was exposed, is it reported at the end of the session and marked for rotation? (§13)
 - [ ] **Audit**: Sensitive mutations write AuditLog?
 - [ ] **Tests**: Unit + integration tests for new code? Do they pass?
-- [ ] **Academic**: Did I include the "📚 Aprende con esto" section (§15)?
-- [ ] **Language**: Code/comments in English; explanation to Jorge in es/pt?
+- [ ] **Decision record**: Did I include the "📋 Decision record" section (§15)?
+- [ ] **Language**: Code/comments in English; rationale in the owner's language?
 - [ ] **Build**: `dotnet build` / `ng build` + `dotnet test` / `ng test` pass clean?
