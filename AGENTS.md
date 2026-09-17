@@ -112,7 +112,7 @@ Approved by Jorge on 2026-09-02 via the decision wizard. **This supersedes the o
 - **Demo seed**: bank + Admin + **2 demo clients** (e.g. Ana — person, XYZ SL — company) with
   starting balances, seeded transfers between them, plus one sample loan and one sample claim so
   visitors can explore every flow with the 1-click demo buttons.
-- **Demo abuse hardening** (the demo is public, so the threat model is the *visitor*):
+- **Demo abuse hardening** (the demo is public, so the threat model is the _visitor_):
   - Demo identities are **exempt from Identity lockout** while `Demo:Enabled=true`. Their password
     is public by design, so there is no secret to brute-force — lockout only let anyone disable the
     1-click buttons with 5 wrong passwords. The periodic reset also clears any lockout left behind.
