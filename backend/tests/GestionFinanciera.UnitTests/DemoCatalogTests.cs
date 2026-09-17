@@ -55,4 +55,31 @@ public sealed class DemoCatalogTests
         Assert.All(dtos, d => Assert.False(string.IsNullOrWhiteSpace(d.Role)));
         Assert.All(dtos, d => Assert.Equal(DemoCatalog.CompanyName, d.CompanyName));
     }
+
+    [Fact]
+    public void IsDemoAccountEmail_EverySeededEmail_ReturnsTrue()
+    {
+        // Drives the lockout exemption in AuthService: it must recognise every
+        // seeded identity, otherwise an attacker can lock the demo buttons again.
+        Assert.All(DemoCatalog.Accounts, a => Assert.True(DemoCatalog.IsDemoAccountEmail(a.Email)));
+    }
+
+    [Theory]
+    [InlineData("DEMO.ADMIN@GESTFIN.LOCAL")]
+    [InlineData("  demo.ana@gestfin.local  ")]
+    public void IsDemoAccountEmail_IsCaseInsensitiveAndTrimmed(string email)
+    {
+        Assert.True(DemoCatalog.IsDemoAccountEmail(email));
+    }
+
+    [Theory]
+    [InlineData("visitor@example.com")]
+    [InlineData("demo.admin@gestfin.local.evil.com")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void IsDemoAccountEmail_VisitorOrEmpty_ReturnsFalse(string? email)
+    {
+        Assert.False(DemoCatalog.IsDemoAccountEmail(email));
+    }
 }
