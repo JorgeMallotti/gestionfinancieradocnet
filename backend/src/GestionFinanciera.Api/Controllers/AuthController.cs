@@ -1,3 +1,4 @@
+using GestionFinanciera.Api.Extensions;
 using GestionFinanciera.Application.Features.Auth.DTOs;
 using GestionFinanciera.Application.Features.Auth.Interfaces;
 using GestionFinanciera.Infrastructure.Identity;
@@ -153,23 +154,16 @@ public sealed class AuthController(
     /// allowlisted origins. We compare against the allowlist — NOT against the
     /// current Host — because in production the frontend and the API live on
     /// different domains, and in dev the proxy changes the Host port.
+    /// The header is attacker-controlled and is not always a URI, so parsing and
+    /// the fail-closed behaviour live in <see cref="OriginPolicy"/>.
     /// </summary>
     private bool IsSameOriginRequest()
     {
-        string? origin = Request.Headers.Origin;
-        if (string.IsNullOrEmpty(origin))
-            return true; // non-browser clients (curl) have no Origin header
-
-        var uri = new Uri(origin, UriKind.Absolute);
         string[] allowed = configuration
             .GetSection("Cors:AllowedOrigins")
             .Get<string[]>()
             ?? [];
 
-        string withPort = $"{uri.Scheme}://{uri.Host}:{uri.Port}";
-        string withoutPort = $"{uri.Scheme}://{uri.Host}";
-
-        return allowed.Contains(withPort, StringComparer.OrdinalIgnoreCase)
-            || allowed.Contains(withoutPort, StringComparer.OrdinalIgnoreCase);
+        return OriginPolicy.IsAllowed(Request.Headers.Origin, allowed);
     }
 }
