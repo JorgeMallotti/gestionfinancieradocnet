@@ -116,10 +116,24 @@ jobs:
       # (SQL Server auth + JWT signing key) end to end (AGENTS.md §13).
       #
       # Both calls are RETRIED, because the first requests after a deployment can
-      # fail while the app is still warming up -- a cold start, not a broken
-      # deployment (lesson of 2026-09-15, and it happened again on the first
-      # pipeline run on 2026-09-16: /health answered 200 while the data path
-      # returned 500, so a green health check does NOT mean the app is ready).
+      # fail while the app is still settling -- a cold start, not a broken
+      # deployment (lesson of 2026-09-15, repeated on 2026-09-16: /health answered
+      # 200 while the data path returned 500, so a green health check does NOT mean
+      # the app is ready).
+      #
+      # The window is 14 attempts (~3.5 min) because of a THIRD cause, found on
+      # 2026-09-17 and different from both earlier ones: the zip deployment
+      # EXTRACTS OVER the running app (the B1 plan has no slots), so for ~90
+      # seconds the process keeps answering requests while its own assemblies are
+      # being replaced. EF Core then builds its model from a half-written
+      # assembly and throws BadImageFormatException (0x8007000B), which makes
+      # every database call answer 500 while /health still answers 200 -- the
+      # exact split seen in the failed run 35218450677. It heals itself when the
+      # deployment finishes; 6 attempts (90 s) simply expired first.
+      #
+      # Retrying is the MITIGATION, not the cure: real users still get those 500s.
+      # The cure is an atomic deployment (WEBSITE_RUN_FROM_PACKAGE), tracked as
+      # follow-up work.
       #
       # Only 5xx and connection failures are retried. A 4xx is a real answer --
       # bad credentials, a missing configuration -- and retrying it would just
@@ -127,7 +141,7 @@ jobs:
       - name: Smoke test (health + data path)
         run: |
           health=""
-          for attempt in 1 2 3 4 5 6; do
+          for attempt in $(seq 1 14); do
             health=$(curl -s -o /dev/null -w "%{http_code}" https://api.mallottidigital.com/health)
             echo "health attempt $attempt -> $health"
             [ "$health" = "200" ] && break
@@ -136,7 +150,7 @@ jobs:
           done
 
           login=""
-          for attempt in 1 2 3 4 5 6; do
+          for attempt in $(seq 1 14); do
             login=$(curl -s -o /dev/null -w "%{http_code}" \
               -X POST https://api.mallottidigital.com/api/auth/demo-login \
               -H "Content-Type: application/json" \
