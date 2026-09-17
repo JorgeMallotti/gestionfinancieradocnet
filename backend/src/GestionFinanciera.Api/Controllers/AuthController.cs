@@ -18,7 +18,8 @@ namespace GestionFinanciera.Api.Controllers;
 public sealed class AuthController(
     IAuthService authService,
     IOptions<JwtOptions> jwtOptions,
-    IConfiguration configuration) : ControllerBase
+    IConfiguration configuration,
+    IWebHostEnvironment environment) : ControllerBase
 {
     public const string RefreshCookieName = "refresh_token";
 
@@ -122,7 +123,12 @@ public sealed class AuthController(
         var options = new CookieOptions
         {
             HttpOnly = true,            // JavaScript cannot read it (XSS-safe)
-            Secure = Request.IsHttps,   // HTTPS only (localhost dev stays http)
+            // Secure is decided by the ENVIRONMENT, not by Request.IsHttps:
+            // behind Azure App Service the request only looks like HTTPS when
+            // ForwardedHeaders is enabled, so tying the flag to it meant one
+            // misconfigured App Setting silently dropped `Secure` from the
+            // cookie. In Development http has to keep working.
+            Secure = !environment.IsDevelopment(),
             SameSite = SameSiteMode.Strict,
             Path = "/api/auth",         // Sent only to auth endpoints
             Expires = DateTimeOffset.UtcNow.Add(_jwtOptions.RefreshTokenLifetime),
@@ -136,7 +142,7 @@ public sealed class AuthController(
         Response.Cookies.Delete(RefreshCookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
+            Secure = !environment.IsDevelopment(),
             SameSite = SameSiteMode.Strict,
             Path = "/api/auth",
         });

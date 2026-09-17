@@ -128,7 +128,12 @@ public sealed class AuthService(
             return Result<(AuthResponseDto, string)>.Failure("Invalid email or password.");
         }
 
-        if (await userManager.IsLockedOutAsync(user))
+        // Demo identities are exempt from lockout: their password is public (the
+        // whole point of the one-click demo), so there is nothing to brute-force
+        // and the lockout only served an attacker — five wrong passwords against
+        // a published email disabled the demo buttons for every visitor. Skipping
+        // the check also makes a lockout left by an earlier attack harmless.
+        if (!IsDemoAccount(user.Email) && await userManager.IsLockedOutAsync(user))
             return Result<(AuthResponseDto, string)>.Failure("Account is temporarily locked. Try again later.");
 
         bool valid = await userManager.CheckPasswordAsync(user, dto.Password);
@@ -241,12 +246,27 @@ public sealed class AuthService(
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private static RefreshToken CreateRefreshTokenEntity(Guid userId, string tokenValue) =>
+    /// <summary>
+    /// Demo accounts are exempt from lockout, but ONLY while demo mode is on:
+    /// with Demo:Enabled=false those identities are ordinary users and the
+    /// usual lockout policy applies again.
+    /// </summary>
+    private bool IsDemoAccount(string? email) =>
+        _demoOptions.Enabled && DemoCatalog.IsDemoAccountEmail(email);
+
+    /// <summary>
+    /// The lifetime of the stored row MUST equal the lifetime of the cookie
+    /// issued by the controller — both now come from Jwt:RefreshTokenLifetime.
+    /// It used to be hardcoded to 7 days: shortening the configured lifetime
+    /// left orphan rows behind, and lengthening it made refresh fail early
+    /// (the row expired before the cookie did).
+    /// </summary>
+    private RefreshToken CreateRefreshTokenEntity(Guid userId, string tokenValue) =>
         new()
         {
             UserId = userId,
             TokenHash = HashToken(tokenValue),
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            ExpiresAt = DateTimeOffset.UtcNow.Add(_jwtOptions.RefreshTokenLifetime),
         };
 
     /// <summary>SHA-256 hash of the token — the raw value is never persisted.</summary>

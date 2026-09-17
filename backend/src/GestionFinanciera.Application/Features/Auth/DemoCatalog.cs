@@ -46,6 +46,20 @@ public static class DemoCatalog
         Accounts.FirstOrDefault(a =>
             string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// True when the email belongs to a seeded demo identity.
+    /// Used by the login flow to exempt demo accounts from Identity lockout:
+    /// their password is public by design, so there is no secret to protect
+    /// and lockout would only let anyone disable the one-click demo access.
+    /// Matching is trimmed and case-insensitive — the same leniency Identity
+    /// applies when it resolves the user, so the exemption cannot be skipped
+    /// by a differently-cased email.
+    /// </summary>
+    public static bool IsDemoAccountEmail(string? email) =>
+        !string.IsNullOrWhiteSpace(email)
+        && Accounts.Any(a =>
+            string.Equals(a.Email, email.Trim(), StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Public metadata of every demo account (no credentials).</summary>
     public static IReadOnlyList<DemoAccountDto> ToDtos() =>
         Accounts.Select(a => a.ToDto()).ToList();
