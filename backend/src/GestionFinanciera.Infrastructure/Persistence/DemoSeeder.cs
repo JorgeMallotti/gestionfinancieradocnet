@@ -112,6 +112,17 @@ public sealed class DemoSeeder(
         await dbContext.Loans.Where(l => l.CompanyId == company.Id).ExecuteDeleteAsync(ct);
         await dbContext.Movements.Where(m => m.CompanyId == company.Id).ExecuteDeleteAsync(ct);
 
+        // ── Category catalog ────────────────────────────────────────────
+        // Categories are Admin-managed AND the demo Admin credential is public
+        // (one-click access), so a visitor can inject categories with it. This
+        // reset used to leave them untouched, which made the catalog the ONE
+        // thing that survived every reset and stayed visible to the next
+        // visitor. Wipe the whole catalog — not just the seeded five — so the
+        // demo returns exactly to its seed; SeedSampleDataAsync(force: true)
+        // below recreates the canonical catalog right after. Order is safe:
+        // movements are already gone (Category → Movements is ON DELETE SET NULL).
+        await dbContext.Categories.Where(c => c.CompanyId == company.Id).ExecuteDeleteAsync(ct);
+
         // ── Ephemeral visitor accounts ──────────────────────────────────────
         // The public demo is a ~24-hour sandbox: accounts created by visitors
         // through the signup flow are removed on every reset, so the demo world
@@ -127,16 +138,20 @@ public sealed class DemoSeeder(
             .Where(u => u.CompanyId == company.Id && !demoEmails.Contains(u.Email!))
             .ToListAsync(ct);
 
+        // Ids of every identity of the bank: the visitors (deleted just below)
+        // plus the seeded demo identities (added in the restore loop). The
+        // stale-token purge at the end of this method needs the complete list
+        // to stay scoped to the demo company (RefreshToken has no CompanyId).
+        List<Guid> companyUserIds = [.. visitorUsers.Select(u => u.Id)];
+
         if (visitorUsers.Count > 0)
         {
-            List<Guid> visitorIds = visitorUsers.Select(u => u.Id).ToList();
-
             await dbContext.Notifications
-                .Where(n => visitorIds.Contains(n.UserId))
+                .Where(n => companyUserIds.Contains(n.UserId))
                 .ExecuteDeleteAsync(ct);
 
             await dbContext.ClientAccounts
-                .Where(a => visitorIds.Contains(a.OwnerUserId))
+                .Where(a => companyUserIds.Contains(a.OwnerUserId))
                 .ExecuteDeleteAsync(ct);
 
             foreach (ApplicationUser visitor in visitorUsers)
@@ -156,6 +171,15 @@ public sealed class DemoSeeder(
             if (user is null)
                 continue;
 
+            companyUserIds.Add(user.Id);
+
+            // Lockout is meaningless for a demo identity (public password) and
+            // only serves an attacker: five wrong passwords against a published
+            // email would disable the one-click buttons for every visitor until
+            // the lock expired. Clearing it here also repairs the accounts that
+            // an attacker locked before this behaviour existed.
+            await ClearLockoutAsync(user);
+
             ClientAccount? clientAccount = await dbContext.ClientAccounts
                 .SingleOrDefaultAsync(a => a.CompanyId == company.Id && a.OwnerUserId == user.Id, ct);
             if (clientAccount is null)
@@ -167,9 +191,40 @@ public sealed class DemoSeeder(
 
         await dbContext.SaveChangesAsync(ct);
 
+        // ── Stale refresh tokens ────────────────────────────────────────────
+        // A row is inserted on every login/refresh and nothing ever pruned them:
+        // the demo identities are permanent, so their rows would accumulate for
+        // ever (a SQL Basic database is 2 GB, and the demo login is public and
+        // rate-limited only per IP). Drop what is already expired or was rotated
+        // away — the demo has no use for refresh-token history.
+        if (companyUserIds.Count > 0)
+        {
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+
+            await dbContext.RefreshTokens
+                .Where(r => companyUserIds.Contains(r.UserId)
+                    && (r.IsRevoked || r.ExpiresAt <= now))
+                .ExecuteDeleteAsync(ct);
+        }
+
         await SeedSampleDataAsync(company.Id, ct, force: true);
 
         logger.LogInformation("Demo data reset completed for company {CompanyId}.", company.Id);
+    }
+
+    /// <summary>Clears the lockout state of a demo identity (see the reset flow).</summary>
+    private async Task ClearLockoutAsync(ApplicationUser user)
+    {
+        IdentityResult unlock = await userManager.SetLockoutEndDateAsync(user, null);
+        IdentityResult reset = await userManager.ResetAccessFailedCountAsync(user);
+
+        if (!unlock.Succeeded || !reset.Succeeded)
+        {
+            logger.LogWarning(
+                "Could not clear lockout for {Email}: {Errors}",
+                user.Email,
+                string.Join("; ", unlock.Errors.Concat(reset.Errors).Select(e => e.Description)));
+        }
     }
 
     private async Task<Company> GetOrCreateCompanyAsync(CancellationToken ct)
