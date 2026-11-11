@@ -2,8 +2,6 @@
 
 Monorepo: **.NET 10 Web API + Angular 21 + SQL Server + Azure**.
 
-**🔗 Live demo: <https://finanzas.mallottidigital.com>** — one-click demo accounts, no signup needed.
-
 A bank-like platform built as a portfolio-grade reference implementation. One bank acts
 as the intermediary while its client accounts — individuals and companies — hold
 balances, transfer money between each other, request loans and open claims that the

@@ -12,7 +12,7 @@ import { environment } from '../../../environments/environment';
  *
  * Why it was invisible during development: `ng serve` proxies `/api` to the API
  * (see `proxy.conf.json`), so requests looked same-origin and cookies travelled anyway.
- * Production talks to a different origin (api.mallottidigital.com) and the failure appears.
+ * Production deployments that use a different API origin must configure CORS and credentials.
  *
  * It must be the OUTERMOST interceptor: `authInterceptor` retries a 401 by calling
  * `refresh()` from inside its own `catchError`, so this interceptor has to wrap that
