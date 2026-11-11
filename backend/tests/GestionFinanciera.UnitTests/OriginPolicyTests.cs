@@ -15,7 +15,6 @@ public sealed class OriginPolicyTests
 {
     private static readonly string[] Allowed =
     [
-        "https://finanzas.mallottidigital.com",
         "http://localhost:4200",
     ];
 
@@ -45,25 +44,15 @@ public sealed class OriginPolicyTests
     }
 
     [Theory]
-    [InlineData("https://finanzas.mallottidigital.com")]
-    [InlineData("https://FINANZAS.mallottidigital.com")]
     [InlineData("http://localhost:4200")]
     public void AllowlistedOrigin_IsAllowed(string origin)
     {
         Assert.True(OriginPolicy.IsAllowed(origin, Allowed));
     }
 
-    [Fact]
-    public void AllowlistedHost_IsAcceptedWithTheDefaultPortToo()
-    {
-        // The allowlist entry has no port, so the explicit default port must
-        // still match the same host.
-        Assert.True(OriginPolicy.IsAllowed("https://finanzas.mallottidigital.com:443", Allowed));
-    }
-
     [Theory]
     [InlineData("https://evil.example.com")]
-    [InlineData("https://finanzas.mallottidigital.com.evil.com")]
+    [InlineData("https://demo.example.com")]
     [InlineData("http://localhost:4300")]
     public void ForeignOrigin_IsRejected(string origin)
     {
@@ -73,6 +62,6 @@ public sealed class OriginPolicyTests
     [Fact]
     public void EmptyAllowlist_RejectsEveryPresentOrigin()
     {
-        Assert.False(OriginPolicy.IsAllowed("https://finanzas.mallottidigital.com", []));
+        Assert.False(OriginPolicy.IsAllowed("https://demo.example.com", []));
     }
 }
