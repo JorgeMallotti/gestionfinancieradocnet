@@ -801,25 +801,16 @@ on the website becomes permanent text in the repository.
 
 ## 14. Deployment Rules (Azure)
 
-Target architecture. The concrete, deployed values for the demo are:
+Target architecture:
 
 ```
-Landing (www.mallottidigital.com) ──iframe (same-site)──┐
-                                                        ▼
-User → https://finanzas.mallottidigital.com  (Static Web Apps, Free — SWA `swa-gestfin-mallotti`)
-              ↓ HTTPS  ·  CORS allowlist (exact origins, credentials)
-       https://api.mallottidigital.com  (App Service `app-gestfin-mallotti`, Linux .NET 10, B1 + Always On)
-              ↓
-       Azure SQL `sqldb-gestfin-prod` (Basic DTU) → RG `rg-gestfin-prod` (Sweden Central)
-              ↓
-       Secrets: Azure Key Vault `kv-gestfin-prod`  |  Logs: Application Insights
+Frontend → HTTPS → Backend API → Azure SQL
 ```
 
-⚠️ **Frontend and backend MUST share the same registrable domain** (`finanzas.` + `api.` under
-`mallottidigital.com`). The refresh token is an httpOnly cookie with **`SameSite=Strict`**:
-under different registrable domains the cookie is never sent → refresh 401 → session lost.
-The same rule makes the landing's **iframe embedding work**, because `www.` and `finanzas.`
-are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies are blocked).
+The demo's former Azure deployment is being removed. When configuring a new deployment,
+keep the frontend and backend on the same registrable domain: the refresh token is an
+httpOnly cookie with **`SameSite=Strict`**, which is not sent on cross-site requests.
+Never "fix" this with `SameSite=None` (third-party cookies are blocked).
 
 **Hard rules:**
 
@@ -850,16 +841,11 @@ are the _same site_. Never "fix" this with `SameSite=None` (third-party cookies 
   - Enable Entra ID auth as an option; firewall restricted to App Service outbound IPs or
     "Allow Azure services".
   - Backups: automatic geo-redundant for Basic+; verify retention settings.
-- **Domain**: frontend `https://finanzas.mallottidigital.com` (Static Web Apps custom domain,
-  automatic cert); backend `https://api.mallottidigital.com` (App Service, SNI SSL). Both are
-  subdomains of Jorge's registrable domain — see the diagram above for why. DNS lives in
-  **Cloudflare** and every record must stay **"DNS only" (grey cloud), never "Proxied"**
-  (proxying breaks domain validation and the certificate: 525/526). CORS allowlist contains
-  exactly the real origins (`finanzas.`, the SWA default hostname, `http://localhost:4200`),
-  never wildcards — the SWA default hostname is required because
-  `AuthController.IsSameOriginRequest()` validates `Origin` against that list, so without it
-  the refresh returns 403. No `X-Frame-Options: DENY` on the frontend: `frame-ancestors`
-  in the CSP controls who may embed it (currently the landing).
+- **Domain**: configure the frontend and backend hostnames for the new deployment. DNS must
+  remain **"DNS only" (grey cloud), never "Proxied"** when using Cloudflare, as proxying can
+  break domain validation and certificates (525/526). CORS must contain exactly the frontend
+  origins, never wildcards. Include the hosting provider's default hostname if
+  `AuthController.IsSameOriginRequest()` validates it.
 - **Health checks**: `/health` endpoint wired to the App Service health check feature;
   `AZURE_APPINSIGHTS_KEY` optional; Serilog → Application Insights sink in prod.
 - Every deploy must be reproducible: same commit → same build (lock dependencies).
@@ -873,8 +859,8 @@ long-lived secrets.
 | --------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `ci.yml`              | PR to `main`/`staging`, push to `staging`                        | `dotnet build/test/format` + `ng lint/test/build`. **No Azure access, no secrets.** |
 | `branch-policy.yml`   | PR targeting `main`                                              | Fails unless the source branch is `staging` and not a fork (§9). **No secrets.**    |
-| `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service → smoke test                                   |
-| `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App → smoke test      |
+| `deploy-backend.yml`  | **merge into `main`** touching `backend/**`, or manual dispatch  | build + test → publish → App Service                                                |
+| `deploy-frontend.yml` | **merge into `main`** touching `frontend/**`, or manual dispatch | `npm ci` → `ng build --configuration production` → Static Web App                    |
 
 **Hard rules:**
 
